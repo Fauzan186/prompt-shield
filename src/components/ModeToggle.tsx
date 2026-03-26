@@ -1,0 +1,42 @@
+import { setMode } from '@/features/prompt/promptSlice';
+import { useAppDispatch, useAppSelector } from '@/hooks/redux';
+import type { SanitizeMode } from '@/types/prompt';
+
+const modeOptions: Array<{
+  value: SanitizeMode;
+  label: string;
+  description: string;
+}> = [
+  { value: 'mask', label: 'Mask', description: 'Hide values with asterisks.' },
+  { value: 'replace', label: 'Replace', description: 'Swap values for typed labels.' },
+  { value: 'remove', label: 'Remove', description: 'Delete sensitive values entirely.' },
+];
+
+export const ModeToggle = () => {
+  const dispatch = useAppDispatch();
+  const mode = useAppSelector((state) => state.prompt.mode);
+
+  return (
+    <div className="grid gap-3 md:grid-cols-3">
+      {modeOptions.map((option) => {
+        const isActive = option.value === mode;
+
+        return (
+          <button
+            key={option.value}
+            type="button"
+            onClick={() => dispatch(setMode(option.value))}
+            className={`rounded-2xl border px-4 py-3 text-left transition ${
+              isActive
+                ? 'border-accent-400 bg-accent-500/10 text-white'
+                : 'border-slate-800 bg-slate-950/50 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
+            }`}
+          >
+            <div className="text-sm font-semibold">{option.label}</div>
+            <div className="mt-1 text-xs text-slate-400">{option.description}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+};
