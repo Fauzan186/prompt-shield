@@ -5,6 +5,8 @@ const typeBadgeStyles: Record<string, string> = {
   email: 'bg-sky-500/10 text-sky-300 ring-1 ring-inset ring-sky-500/20',
   phone: 'bg-amber-500/10 text-amber-300 ring-1 ring-inset ring-amber-500/20',
   url: 'bg-violet-500/10 text-violet-300 ring-1 ring-inset ring-violet-500/20',
+  creditCard: 'bg-fuchsia-500/10 text-fuchsia-300 ring-1 ring-inset ring-fuchsia-500/20',
+  token: 'bg-emerald-500/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/20',
 };
 
 export const DetectedItemsList = () => {

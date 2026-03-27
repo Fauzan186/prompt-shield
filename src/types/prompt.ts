@@ -1,6 +1,12 @@
 export type SanitizeMode = 'mask' | 'replace' | 'remove';
 
-export type DetectedItemType = 'apiKey' | 'email' | 'phone' | 'url';
+export type DetectedItemType =
+  | 'apiKey'
+  | 'email'
+  | 'phone'
+  | 'url'
+  | 'creditCard'
+  | 'token';
 
 export interface DetectedItem {
   id: string;

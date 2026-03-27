@@ -27,6 +27,10 @@ body {
   min-height: 100vh;
 }
 
+#root {
+  min-height: 100vh;
+}
+
 button,
 textarea {
   font: inherit;
@@ -34,4 +38,109 @@ textarea {
 
 ::selection {
   background: rgba(34, 197, 94, 0.28);
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -22px, 0) scale(1.04);
+  }
+}
+
+@keyframes float-delayed {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(18px, -18px, 0) scale(0.98);
+  }
+}
+
+@keyframes float-wide {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(-24px, 14px, 0) scale(1.06);
+  }
+}
+
+@keyframes pulse-grid {
+  0%,
+  100% {
+    opacity: 0.16;
+  }
+  50% {
+    opacity: 0.32;
+  }
+}
+
+@keyframes shimmer-line {
+  0% {
+    transform: translateX(-20%) scaleX(0.9);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateX(120%) scaleX(1.05);
+    opacity: 0;
+  }
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(36px);
+  will-change: transform;
+}
+
+.orb-one {
+  animation: float-slow 12s ease-in-out infinite;
+}
+
+.orb-two {
+  animation: float-delayed 16s ease-in-out infinite;
+}
+
+.orb-three {
+  animation: float-slow 18s ease-in-out infinite reverse;
+}
+
+.orb-four {
+  animation: float-wide 14s ease-in-out infinite;
+}
+
+.orb-five {
+  animation: float-delayed 20s ease-in-out infinite reverse;
+}
+
+.pulse-grid {
+  animation: pulse-grid 8s ease-in-out infinite;
+}
+
+.scan-lines {
+  background-image: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.015) 0,
+    rgba(255, 255, 255, 0.015) 1px,
+    transparent 1px,
+    transparent 14px
+  );
+  background-size: 100% 14px;
+}
+
+.neural-line {
+  position: absolute;
+  height: 1px;
+  border-radius: 9999px;
+  background: linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.22), transparent);
+  box-shadow: 0 0 18px rgba(94, 234, 212, 0.08);
+  animation: shimmer-line 12s linear infinite;
 }

@@ -3,6 +3,8 @@ import { useAppDispatch, useAppSelector } from '@/hooks/redux';
 
 const samplePrompt = `Hey team, use sk-1234567890abcdef1234567890 to connect the staging API.
 Reach me at jane.doe@company.com or +1 (555) 867-5309.
+Customer card on file: 4242 4242 4242 4242
+Temporary auth: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.demo.signature
 Docs are here: https://internal.company.com/secrets`;
 
 export const PromptForm = () => {
