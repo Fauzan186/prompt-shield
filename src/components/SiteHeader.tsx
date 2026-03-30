@@ -1,5 +1,4 @@
 import { Link, NavLink } from 'react-router-dom';
-
 interface SiteHeaderProps {
   showAppCta?: boolean;
   compact?: boolean;
@@ -14,7 +13,7 @@ export const SiteHeader = ({ showAppCta = true, compact = false }: SiteHeaderPro
       <div className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between rounded-full border border-white/10 bg-slate-950/55 px-4 py-3 shadow-panel backdrop-blur md:px-6">
           <Link to="/" className="inline-flex items-center gap-3 text-white">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-emerald-400/30 bg-emerald-400/10 text-sm font-bold text-emerald-200">
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,107,87,0.22),rgba(244,63,94,0.18))] text-sm font-bold text-white shadow-[0_8px_24px_rgba(255,107,87,0.18)]">
               PS
             </span>
             <div>
@@ -41,14 +40,14 @@ export const SiteHeader = ({ showAppCta = true, compact = false }: SiteHeaderPro
           {showAppCta ? (
             <Link
               to="/app"
-              className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-4 py-2 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+              className="inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
             >
               Open Tool
             </Link>
           ) : (
             <Link
               to="/"
-              className="inline-flex items-center justify-center rounded-full border border-white/10 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-white/20 hover:bg-white/5"
+              className="inline-flex items-center justify-center rounded-full border border-white/10 bg-slate-900/75 px-4 py-2 text-sm font-semibold text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.03)] transition duration-200 hover:border-white/20 hover:bg-slate-800 hover:text-white"
             >
               Back Home
             </Link>

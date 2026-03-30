@@ -37,7 +37,7 @@ textarea {
 }
 
 ::selection {
-  background: rgba(34, 197, 94, 0.28);
+  background: rgba(255, 107, 87, 0.28);
 }
 
 @keyframes float-slow {

@@ -6,11 +6,12 @@ const typeBadgeStyles: Record<string, string> = {
   phone: 'bg-amber-500/10 text-amber-300 ring-1 ring-inset ring-amber-500/20',
   url: 'bg-violet-500/10 text-violet-300 ring-1 ring-inset ring-violet-500/20',
   creditCard: 'bg-fuchsia-500/10 text-fuchsia-300 ring-1 ring-inset ring-fuchsia-500/20',
-  token: 'bg-emerald-500/10 text-emerald-300 ring-1 ring-inset ring-emerald-500/20',
+  token: 'bg-orange-500/10 text-orange-300 ring-1 ring-inset ring-orange-500/20',
 };
 
 export const DetectedItemsList = () => {
   const detectedItems = useAppSelector((state) => state.prompt.detectedItems);
+  const totalCount = detectedItems.length;
 
   if (!detectedItems.length) {
     return (
@@ -21,25 +22,33 @@ export const DetectedItemsList = () => {
   }
 
   return (
-    <ul className="space-y-3">
-      {detectedItems.map((item) => (
-        <li
-          key={item.id}
-          className="rounded-2xl border border-slate-800 bg-slate-950/60 px-4 py-4"
-        >
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="text-sm font-medium text-white">{item.label}</div>
-              <div className="mt-1 break-all text-sm text-slate-400">{item.value}</div>
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-white/10 bg-slate-950/45 px-4 py-3">
+        <div className="text-xs uppercase tracking-[0.18em] text-slate-500">Summary</div>
+        <div className="mt-2 text-2xl font-semibold text-white">{totalCount}</div>
+        <div className="text-sm text-slate-400">sensitive matches found</div>
+      </div>
+
+      <ul className="space-y-3">
+        {detectedItems.map((item) => (
+          <li
+            key={item.id}
+            className="rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-4"
+          >
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <div className="text-sm font-medium text-white">{item.label}</div>
+                <div className="mt-1 break-all text-sm leading-6 text-slate-400">{item.value}</div>
+              </div>
+              <span
+                className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${typeBadgeStyles[item.type]}`}
+              >
+                {item.type}
+              </span>
             </div>
-            <span
-              className={`inline-flex rounded-full px-3 py-1 text-xs font-medium capitalize ${typeBadgeStyles[item.type]}`}
-            >
-              {item.type}
-            </span>
-          </div>
-        </li>
-      ))}
-    </ul>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 };

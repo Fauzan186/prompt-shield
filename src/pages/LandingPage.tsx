@@ -16,21 +16,42 @@ const heroStats = [
   { value: '100%', label: 'Browser-based workflow' },
 ];
 
+const trustSignals = [
+  'Built for AI teams cleaning prompts before they reach public tools',
+  'Fast enough for daily support, product, and engineering workflows',
+  'Simple redaction choices that keep prompts readable and safe',
+];
+
 const featureCards = [
   {
     title: 'Detect risky content',
     description:
-      'Scan prompts for API keys, emails, phone numbers, URLs, tokens, and payment card numbers.',
+      'Catch API keys, emails, phone numbers, URLs, bearer tokens, JWTs, and payment card numbers before they spread.',
   },
   {
     title: 'Choose the right action',
     description:
-      'Mask values, replace them with clear labels, or remove them completely depending on the sharing context.',
+      'Mask values for readability, replace them with useful labels, or remove them entirely for stricter privacy workflows.',
   },
   {
     title: 'Review before sharing',
     description:
-      'Check detections and the cleaned output side by side, then copy the prompt when it is ready.',
+      'Review detections and the sanitized output together so nothing leaves your browser unchecked.',
+  },
+];
+
+const useCases = [
+  {
+    title: 'Support teams',
+    description: 'Clean customer transcripts and internal notes before asking AI tools for summaries or drafts.',
+  },
+  {
+    title: 'Developers',
+    description: 'Strip tokens, endpoints, and environment secrets before pasting prompts into copilots or bug reports.',
+  },
+  {
+    title: 'Operations and consulting',
+    description: 'Protect sensitive links, contact details, and card-like values in shared workflows and client deliverables.',
   },
 ];
 
@@ -72,29 +93,29 @@ export const LandingPage = () => {
       <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
         <section className="grid gap-12 pt-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:pt-16">
           <div>
-            <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
+            <span className="inline-flex rounded-full border border-orange-400/20 bg-orange-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-orange-200">
               AI Prompt Sanitizer
             </span>
             <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
-              Clean prompts before secrets or customer data leak.
+              Share AI prompts with confidence, not exposed secrets.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              {appName} helps teams sanitize prompts in the browser so examples, support tickets,
-              and AI requests are safer to share.
+              {appName} helps teams detect and sanitize sensitive prompt data in seconds, making it
+              easier to use AI across support, engineering, and operations without leaking values that
+              should stay private.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <Link
                 to="/app"
-                className="inline-flex items-center justify-center rounded-full bg-emerald-400 px-6 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+                className="inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-6 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
               >
                 Open Tool
               </Link>
-              <a
-                href="#features"
-                className="inline-flex items-center justify-center rounded-full border border-white/10 bg-slate-900/60 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:bg-slate-900"
-              >
-                Explore Features
+              <a href="#features" className="rounded-full">
+                <span className="inline-flex items-center justify-center rounded-full border border-white/10 bg-slate-900/60 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:bg-white/5 hover:text-white">
+                  Explore Features
+                </span>
               </a>
             </div>
 
@@ -109,10 +130,19 @@ export const LandingPage = () => {
                 </div>
               ))}
             </div>
+
+            <div className="mt-8 space-y-3">
+              {trustSignals.map((item) => (
+                <div key={item} className="flex items-start gap-3 text-sm text-slate-300">
+                  <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-accent-300 shadow-[0_0_18px_rgba(255,138,114,0.45)]" />
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="relative">
-            <div className="absolute -inset-8 rounded-[2.5rem] bg-gradient-to-br from-emerald-400/20 via-cyan-400/10 to-transparent blur-3xl" />
+            <div className="absolute -inset-8 rounded-[2.5rem] bg-gradient-to-br from-orange-400/20 via-rose-500/10 to-cyan-400/5 blur-3xl" />
             <div className="relative overflow-hidden rounded-[2rem] border border-white/10 bg-slate-950/65 shadow-panel backdrop-blur">
               <div className="border-b border-white/10 px-6 py-4">
                 <div className="flex items-center justify-between">
@@ -124,8 +154,8 @@ export const LandingPage = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-full bg-rose-400/80" />
-                    <span className="h-3 w-3 rounded-full bg-amber-400/80" />
-                    <span className="h-3 w-3 rounded-full bg-emerald-400/80" />
+                    <span className="h-3 w-3 rounded-full bg-orange-400/80" />
+                    <span className="h-3 w-3 rounded-full bg-cyan-400/80" />
                   </div>
                 </div>
               </div>
@@ -151,9 +181,9 @@ export const LandingPage = () => {
                   ))}
                 </div>
 
-                <div className="rounded-3xl border border-emerald-400/15 bg-emerald-400/10 p-5">
-                  <div className="text-xs uppercase tracking-[0.22em] text-emerald-200/80">After</div>
-                  <p className="mt-3 text-sm leading-7 text-emerald-50">
+                <div className="rounded-3xl border border-orange-400/15 bg-orange-400/10 p-5">
+                  <div className="text-xs uppercase tracking-[0.22em] text-orange-200/80">After</div>
+                  <p className="mt-3 text-sm leading-7 text-orange-50">
                     Use <span className="font-semibold">[API_KEY]</span> and send the report to{' '}
                     <span className="font-semibold">[EMAIL]</span> with{' '}
                     <span className="font-semibold">[TOKEN]</span>
@@ -178,7 +208,7 @@ export const LandingPage = () => {
             {featureCards.map((card) => (
               <SectionCard key={card.title} title={card.title} description={card.description}>
                 <div className="text-sm leading-7 text-slate-300">
-                  PromptShield keeps the experience simple so prompts can be reviewed and shared quickly.
+                  Designed to help teams keep AI workflows moving without exposing secrets that do not belong in prompts.
                 </div>
               </SectionCard>
             ))}
@@ -196,7 +226,7 @@ export const LandingPage = () => {
                   key={step}
                   className="flex items-start gap-4 rounded-2xl border border-white/10 bg-slate-950/35 p-4"
                 >
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-400/15 text-sm font-semibold text-emerald-200">
+                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-400/15 text-sm font-semibold text-orange-200">
                     {index + 1}
                   </span>
                   <p className="text-sm leading-7 text-slate-300">{step}</p>
@@ -230,6 +260,24 @@ export const LandingPage = () => {
               </div>
             </div>
           </SectionCard>
+        </section>
+
+        <section className="mt-20">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-semibold text-white sm:text-4xl">Where PromptShield fits</h2>
+            <p className="mt-4 text-base leading-8 text-slate-400">
+              Useful for teams that want AI speed without turning prompt sharing into a privacy risk.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            {useCases.map((item) => (
+              <SectionCard key={item.title} title={item.title} description={item.description}>
+                <div className="text-sm leading-7 text-slate-300">
+                  Cleaner prompts mean safer collaboration, better examples, and less manual cleanup.
+                </div>
+              </SectionCard>
+            ))}
+          </div>
         </section>
 
         <section id="faq" className="mt-20 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -268,7 +316,7 @@ export const LandingPage = () => {
             </div>
             <Link
               to="/app"
-              className="mt-6 inline-flex items-center justify-center rounded-full bg-emerald-400 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:bg-emerald-300"
+              className="mt-6 inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
             >
               Try PromptShield
             </Link>

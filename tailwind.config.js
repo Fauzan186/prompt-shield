@@ -11,9 +11,9 @@ export default {
           700: '#1e3a8a',
         },
         accent: {
-          500: '#22c55e',
-          400: '#4ade80',
-          300: '#86efac',
+          500: '#ff6b57',
+          400: '#ff8a72',
+          300: '#ffb4a6',
         },
       },
       boxShadow: {

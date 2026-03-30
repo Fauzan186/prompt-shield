@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAppSelector } from '@/hooks/redux';
+import { Button } from '@/components/Button';
 
 export const SanitizedOutput = () => {
   const [copied, setCopied] = useState(false);
@@ -17,7 +18,7 @@ export const SanitizedOutput = () => {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/60 p-4">
+      <div className="rounded-[1.5rem] border border-slate-800 bg-slate-950/65 p-4">
         {sanitizedText ? (
           <pre className="whitespace-pre-wrap break-words text-sm text-slate-100">
             {sanitizedText}
@@ -29,14 +30,13 @@ export const SanitizedOutput = () => {
         )}
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
         onClick={handleCopy}
         disabled={!sanitizedText}
-        className="inline-flex items-center justify-center rounded-2xl border border-slate-700 px-4 py-3 text-sm font-semibold text-slate-100 transition hover:border-slate-600 hover:bg-slate-900 disabled:cursor-not-allowed disabled:border-slate-800 disabled:text-slate-500 disabled:hover:bg-transparent"
       >
         {copied ? 'Copied' : 'Copy to Clipboard'}
-      </button>
+      </Button>
     </div>
   );
 };

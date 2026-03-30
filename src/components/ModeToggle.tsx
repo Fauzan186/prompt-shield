@@ -28,12 +28,14 @@ export const ModeToggle = () => {
             onClick={() => dispatch(setMode(option.value))}
             className={`rounded-2xl border px-4 py-3 text-left transition ${
               isActive
-                ? 'border-accent-400 bg-accent-500/10 text-white'
-                : 'border-slate-800 bg-slate-950/50 text-slate-300 hover:border-slate-700 hover:bg-slate-900'
+                ? 'border-accent-400/40 bg-accent-500/12 text-white shadow-[0_10px_24px_rgba(255,107,87,0.14)]'
+                : 'border-slate-800 bg-slate-950/50 text-slate-300 hover:border-slate-700 hover:bg-slate-900 hover:text-white'
             }`}
           >
             <div className="text-sm font-semibold">{option.label}</div>
-            <div className="mt-1 text-xs text-slate-400">{option.description}</div>
+            <div className={`mt-1 text-xs ${isActive ? 'text-slate-200/80' : 'text-slate-400'}`}>
+              {option.description}
+            </div>
           </button>
         );
       })}
