@@ -8,4 +8,18 @@ export default defineConfig({
       '@': '/src',
     },
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        popup: 'popup.html',
+        content: 'src/extension/content.ts',
+      },
+      output: {
+        entryFileNames: 'assets/[name].js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/[name][extname]',
+      },
+    },
+  },
 });

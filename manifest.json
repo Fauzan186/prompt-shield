@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "PromptShield",
+  "version": "1.0",
+  "description": "Protect sensitive data before sending to AI",
+  "action": {
+    "default_popup": "dist/index.html"
+  },
+  "permissions": [],
+  "host_permissions": []
+}

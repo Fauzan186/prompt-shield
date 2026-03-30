@@ -1,4 +1,5 @@
 import { Link, NavLink } from 'react-router-dom';
+import { Brand } from '@/components/Brand';
 interface SiteHeaderProps {
   showAppCta?: boolean;
   compact?: boolean;
@@ -12,15 +13,7 @@ export const SiteHeader = ({ showAppCta = true, compact = false }: SiteHeaderPro
     <header className="relative z-20">
       <div className="mx-auto max-w-7xl px-4 pt-5 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between rounded-full border border-white/10 bg-slate-950/55 px-4 py-3 shadow-panel backdrop-blur md:px-6">
-          <Link to="/" className="inline-flex items-center gap-3 text-white">
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-2xl border border-white/10 bg-[linear-gradient(135deg,rgba(255,107,87,0.22),rgba(244,63,94,0.18))] text-sm font-bold text-white shadow-[0_8px_24px_rgba(255,107,87,0.18)]">
-              PS
-            </span>
-            <div>
-              <div className="text-sm font-semibold tracking-[0.18em] text-slate-200">PROMPTSHIELD</div>
-              {!compact ? <div className="text-xs text-slate-500">AI Prompt Security</div> : null}
-            </div>
-          </Link>
+          <Brand linked compact={compact} className="text-white" />
 
           <nav className="hidden items-center gap-8 text-sm font-medium md:flex">
             <NavLink to="/" className={navLinkClass} end>
