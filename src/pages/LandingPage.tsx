@@ -11,71 +11,95 @@ const landingDescription =
   'PromptShield is an AI prompt sanitizer that helps teams remove API keys, tokens, emails, phone numbers, URLs, and credit card numbers before prompts are shared.';
 
 const heroStats = [
-  { value: '6+', label: 'Sensitive patterns detected' },
-  { value: '3', label: 'Redaction modes' },
-  { value: '100%', label: 'Browser-based workflow' },
-];
-
-const trustSignals = [
-  'Built for AI teams cleaning prompts before they reach public tools',
-  'Fast enough for daily support, product, and engineering workflows',
-  'Simple redaction choices that keep prompts readable and safe',
+  { value: '6+', label: 'Sensitive patterns' },
+  { value: '3', label: 'Sanitization modes' },
+  { value: '100%', label: 'Browser-based flow' },
 ];
 
 const featureCards = [
   {
-    title: 'Detect risky content',
+    title: 'Catch hidden prompt leaks',
     description:
-      'Catch API keys, emails, phone numbers, URLs, bearer tokens, JWTs, and payment card numbers before they spread.',
+      'Detect API keys, emails, phone numbers, URLs, access tokens, and card-like values before they leave your workspace.',
   },
   {
-    title: 'Choose the right action',
+    title: 'Choose how data is handled',
     description:
-      'Mask values for readability, replace them with useful labels, or remove them entirely for stricter privacy workflows.',
+      'Mask values, replace them with readable labels, or remove them completely based on how strict the share flow needs to be.',
   },
   {
-    title: 'Review before sharing',
+    title: 'Review before you copy',
     description:
-      'Review detections and the sanitized output together so nothing leaves your browser unchecked.',
+      'See the cleaned prompt and every detected match together, so there is no guesswork before sharing.',
+  },
+];
+
+const workflowItems = [
+  {
+    step: '01',
+    title: 'Paste',
+    description: 'Drop in a prompt, support note, transcript, or internal AI draft.',
+  },
+  {
+    step: '02',
+    title: 'Sanitize',
+    description: 'Pick mask, replace, or remove and run a browser-side scan.',
+  },
+  {
+    step: '03',
+    title: 'Share',
+    description: 'Copy a safer version for teammates, tickets, docs, or AI tools.',
   },
 ];
 
 const useCases = [
   {
-    title: 'Support teams',
-    description: 'Clean customer transcripts and internal notes before asking AI tools for summaries or drafts.',
+    title: 'Support and operations',
+    description:
+      'Clean customer notes, escalation details, and internal references before using AI for summaries or replies.',
   },
   {
-    title: 'Developers',
-    description: 'Strip tokens, endpoints, and environment secrets before pasting prompts into copilots or bug reports.',
+    title: 'Engineering and product',
+    description:
+      'Strip tokens, URLs, emails, and environment hints before sharing prompts in copilots, docs, or bug reports.',
   },
   {
-    title: 'Operations and consulting',
-    description: 'Protect sensitive links, contact details, and card-like values in shared workflows and client deliverables.',
+    title: 'Consulting and client work',
+    description:
+      'Protect client data while still using AI to refine examples, analysis, and deliverable drafts.',
   },
 ];
 
-const workflowSteps = [
-  'Paste the prompt or conversation you want to clean.',
-  'Run a scan to detect exposed sensitive values.',
-  'Copy the sanitized version for safer sharing.',
+const trustCards = [
+  {
+    title: 'Browser-first privacy',
+    description: 'PromptShield runs locally in the browser and does not send prompt data to a backend.',
+  },
+  {
+    title: 'Fast enough for daily work',
+    description: 'Built for teams that need a practical prompt check before copy, share, or handoff.',
+  },
+  {
+    title: 'Clear and readable output',
+    description: 'Sanitized prompts stay useful for collaboration, debugging, and AI assistance.',
+  },
 ];
 
 const faqItems = [
   {
     question: 'What is PromptShield used for?',
     answer:
-      'PromptShield helps people sanitize prompts before sharing them with AI tools, teammates, vendors, or public examples.',
+      'PromptShield is used to sanitize prompts before sharing them with AI tools, coworkers, vendors, or public examples.',
   },
   {
-    question: 'Does PromptShield send prompt data to a server?',
+    question: 'Does PromptShield send prompt data anywhere?',
     answer:
-      'No. The tool is designed as a browser-first workflow, so detection and sanitization happen on the client side.',
+      'No. PromptShield is designed as a browser-first experience, so prompt data is not sent to a backend by the app.',
   },
   {
-    question: 'Who is it useful for?',
+    question: 'Who is it best for?',
     answer:
-      'It is useful for AI teams, developers, consultants, support teams, and anyone who handles prompts that may contain secrets or customer information.',
+      'It is useful for support, operations, engineering, product, consulting, and any workflow where prompts may contain sensitive values.',
   },
 ];
 
@@ -91,18 +115,18 @@ export const LandingPage = () => {
       <SiteHeader />
 
       <div className="relative z-10 mx-auto max-w-7xl px-4 pb-20 sm:px-6 lg:px-8">
-        <section className="grid gap-12 pt-10 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:pt-16">
+        <section className="grid gap-12 pt-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:pt-16">
           <div>
             <span className="inline-flex rounded-full border border-orange-400/20 bg-orange-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-orange-200">
               AI Prompt Sanitizer
             </span>
             <h1 className="mt-6 max-w-4xl text-5xl font-semibold tracking-tight text-white sm:text-6xl">
-              Share AI prompts with confidence, not exposed secrets.
+              Clean prompts before secrets become someone else&apos;s problem.
             </h1>
             <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-              {appName} helps teams detect and sanitize sensitive prompt data in seconds, making it
-              easier to use AI across support, engineering, and operations without leaking values that
-              should stay private.
+              {appName} helps teams sanitize prompt content before it gets pasted into AI tools,
+              tickets, docs, or shared examples. Catch sensitive values early and share with more
+              confidence.
             </p>
 
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
@@ -131,14 +155,6 @@ export const LandingPage = () => {
               ))}
             </div>
 
-            <div className="mt-8 space-y-3">
-              {trustSignals.map((item) => (
-                <div key={item} className="flex items-start gap-3 text-sm text-slate-300">
-                  <span className="mt-1 inline-flex h-2.5 w-2.5 rounded-full bg-accent-300 shadow-[0_0_18px_rgba(255,138,114,0.45)]" />
-                  <span>{item}</span>
-                </div>
-              ))}
-            </div>
           </div>
 
           <div className="relative">
@@ -149,7 +165,7 @@ export const LandingPage = () => {
                   <div>
                     <div className="text-sm font-semibold text-white">PromptShield Preview</div>
                     <div className="mt-1 text-xs uppercase tracking-[0.2em] text-slate-500">
-                      Prompt redaction
+                      Safe prompt flow
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -162,16 +178,16 @@ export const LandingPage = () => {
 
               <div className="grid gap-4 p-6">
                 <div className="rounded-3xl border border-rose-500/15 bg-rose-500/8 p-5">
-                  <div className="text-xs uppercase tracking-[0.22em] text-rose-200/80">Before</div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-rose-200/80">Detected</div>
                   <p className="mt-3 text-sm leading-7 text-slate-200">
-                    Use <span className="text-rose-200">sk-prod-84jd92ksl2n2</span> and send the
-                    report to <span className="text-rose-200">finance@company.com</span> with
-                    token=<span className="text-rose-200">eyJhbGciOi...</span>
+                    Use <span className="text-rose-200">sk-prod-84jd92ksl2n2</span>, email{' '}
+                    <span className="text-rose-200">finance@company.com</span>, and token=
+                    <span className="text-rose-200">eyJhbGciOi...</span>
                   </p>
                 </div>
 
-                <div className="grid grid-cols-3 gap-3">
-                  {['API Key', 'Email', 'Token'].map((item) => (
+                <div className="grid gap-3 sm:grid-cols-3">
+                  {['Mask', 'Replace', 'Remove'].map((item) => (
                     <div
                       key={item}
                       className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-200"
@@ -182,10 +198,10 @@ export const LandingPage = () => {
                 </div>
 
                 <div className="rounded-3xl border border-orange-400/15 bg-orange-400/10 p-5">
-                  <div className="text-xs uppercase tracking-[0.22em] text-orange-200/80">After</div>
+                  <div className="text-xs uppercase tracking-[0.22em] text-orange-200/80">Ready To Share</div>
                   <p className="mt-3 text-sm leading-7 text-orange-50">
-                    Use <span className="font-semibold">[API_KEY]</span> and send the report to{' '}
-                    <span className="font-semibold">[EMAIL]</span> with{' '}
+                    Use <span className="font-semibold">[API_KEY]</span>, email{' '}
+                    <span className="font-semibold">[EMAIL]</span>, and{' '}
                     <span className="font-semibold">[TOKEN]</span>
                   </p>
                 </div>
@@ -194,13 +210,65 @@ export const LandingPage = () => {
           </div>
         </section>
 
+        <section className="mt-8">
+          <div className="overflow-hidden rounded-[2rem] border border-emerald-500/20 bg-[linear-gradient(135deg,rgba(16,185,129,0.14),rgba(6,78,59,0.28),rgba(15,23,42,0.48))] shadow-[0_18px_42px_rgba(16,185,129,0.10)] backdrop-blur">
+            <div className="grid gap-0 lg:grid-cols-[0.75fr_1.25fr]">
+              <div className="border-b border-emerald-400/15 p-6 lg:border-b-0 lg:border-r">
+                <div className="flex items-center gap-4">
+                  <div className="relative flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-300/20 bg-emerald-300/10">
+                    <span className="privacy-pulse inline-flex h-3.5 w-3.5 rounded-full bg-emerald-300 shadow-[0_0_18px_rgba(110,231,183,0.6)]" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.22em] text-emerald-300">
+                      Privacy First
+                    </div>
+                    <div className="mt-1 text-xl font-semibold text-white">
+                      Your prompt stays in the browser
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <p className="max-w-3xl text-sm leading-8 text-emerald-50 md:text-[15px]">
+                  PromptShield processes prompt content locally in the browser before you copy or
+                  share it. The app does not send your prompt data to a backend, database, or
+                  external service, which makes it a safer fit for internal notes, support
+                  transcripts, engineering prompts, and client-facing workflows.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-20">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-semibold text-white sm:text-4xl">
+              Why teams trust PromptShield
+            </h2>
+            <p className="mt-4 text-base leading-8 text-slate-400">
+              Built for practical prompt hygiene, not just one-off redaction.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            {trustCards.map((card) => (
+              <SectionCard key={card.title} title={card.title} description={card.description}>
+                <div className="text-sm leading-7 text-slate-300">
+                  Designed for real workflows where prompts move quickly and sensitive values should not.
+                </div>
+              </SectionCard>
+            ))}
+          </div>
+        </section>
+
         <section id="features" className="mt-20">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-              Built for practical prompt privacy
+              Core product benefits
             </h2>
             <p className="mt-4 text-base leading-8 text-slate-400">
-              A focused workflow for teams that want safer prompts without extra complexity.
+              Keep the workflow simple while making prompt sharing safer.
             </p>
           </div>
 
@@ -208,82 +276,65 @@ export const LandingPage = () => {
             {featureCards.map((card) => (
               <SectionCard key={card.title} title={card.title} description={card.description}>
                 <div className="text-sm leading-7 text-slate-300">
-                  Designed to help teams keep AI workflows moving without exposing secrets that do not belong in prompts.
+                  PromptShield helps teams move fast without pasting secrets into the wrong place.
                 </div>
               </SectionCard>
             ))}
           </div>
         </section>
 
-        <section className="mt-20 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+        <section className="mt-20 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <SectionCard
             title="How It Works"
-            description="A simple three-step flow for everyday prompt hygiene."
+            description="A short workflow that fits directly into day-to-day prompt sharing."
           >
             <div className="space-y-4">
-              {workflowSteps.map((step, index) => (
+              {workflowItems.map((item) => (
                 <div
-                  key={step}
+                  key={item.step}
                   className="flex items-start gap-4 rounded-2xl border border-white/10 bg-slate-950/35 p-4"
                 >
-                  <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-400/15 text-sm font-semibold text-orange-200">
-                    {index + 1}
+                  <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-accent-400/20 bg-accent-500/10 text-sm font-semibold text-accent-300">
+                    {item.step}
                   </span>
-                  <p className="text-sm leading-7 text-slate-300">{step}</p>
+                  <div>
+                    <div className="text-sm font-semibold text-white">{item.title}</div>
+                    <p className="mt-1 text-sm leading-7 text-slate-300">{item.description}</p>
+                  </div>
                 </div>
               ))}
             </div>
           </SectionCard>
 
           <SectionCard
-            title="Why teams use PromptShield"
-            description="Useful when prompts move across internal tools, vendors, or AI assistants."
+            title="Where PromptShield Fits"
+            description="Useful whenever prompt content crosses team, tool, or client boundaries."
           >
             <div className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-5">
-                <div className="text-sm font-semibold text-white">Secure sharing</div>
-                <p className="mt-2 text-sm leading-7 text-slate-300">
-                  Remove sensitive values before prompts are pasted into AI tools, tickets, or docs.
-                </p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-5">
-                <div className="text-sm font-semibold text-white">Fast review</div>
-                <p className="mt-2 text-sm leading-7 text-slate-300">
-                  Inspect exactly what was detected before copying the cleaned prompt.
-                </p>
-              </div>
+              {useCases.map((item) => (
+                <div
+                  key={item.title}
+                  className="rounded-2xl border border-white/10 bg-slate-950/35 p-5"
+                >
+                  <div className="text-sm font-semibold text-white">{item.title}</div>
+                  <p className="mt-2 text-sm leading-7 text-slate-300">{item.description}</p>
+                </div>
+              ))}
               <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-5 md:col-span-2">
-                <div className="text-sm font-semibold text-white">Browser-first workflow</div>
+                <div className="text-sm font-semibold text-white">Common prompt risks covered</div>
                 <p className="mt-2 text-sm leading-7 text-slate-300">
-                  PromptShield is designed to keep the core experience lightweight and easy to adopt.
+                  API keys, emails, phone numbers, URLs, credit cards, and tokens can all be
+                  detected before a prompt is copied or shared.
                 </p>
               </div>
             </div>
           </SectionCard>
         </section>
 
-        <section className="mt-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-semibold text-white sm:text-4xl">Where PromptShield fits</h2>
-            <p className="mt-4 text-base leading-8 text-slate-400">
-              Useful for teams that want AI speed without turning prompt sharing into a privacy risk.
-            </p>
-          </div>
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {useCases.map((item) => (
-              <SectionCard key={item.title} title={item.title} description={item.description}>
-                <div className="text-sm leading-7 text-slate-300">
-                  Cleaner prompts mean safer collaboration, better examples, and less manual cleanup.
-                </div>
-              </SectionCard>
-            ))}
-          </div>
-        </section>
-
-        <section id="faq" className="mt-20 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section id="faq" className="mt-20 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <SectionCard
             title="Frequently Asked Questions"
-            description="A few quick answers for first-time visitors."
+            description="Quick answers for teams comparing prompt privacy tools."
           >
             <div className="space-y-4">
               {faqItems.map((item) => (
@@ -299,27 +350,29 @@ export const LandingPage = () => {
           </SectionCard>
 
           <SectionCard
-            title="Prompt categories covered"
-            description="Useful defaults for everyday prompt sanitation."
+            title="Ready to try it?"
+            description="Open the app and sanitize a prompt in a few seconds."
           >
-            <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
-              {['API keys', 'Emails', 'Phone numbers', 'URLs', 'Credit cards', 'Tokens'].map(
-                (item) => (
-                  <div
-                    key={item}
-                    className="rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3"
-                  >
-                    {item}
-                  </div>
-                ),
-              )}
+            <div className="space-y-5">
+              <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
+                {['API keys', 'Emails', 'Phone numbers', 'URLs', 'Credit cards', 'Tokens'].map(
+                  (item) => (
+                    <div
+                      key={item}
+                      className="rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3"
+                    >
+                      {item}
+                    </div>
+                  ),
+                )}
+              </div>
+              <Link
+                to="/app"
+                className="inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
+              >
+                Launch PromptShield
+              </Link>
             </div>
-            <Link
-              to="/app"
-              className="mt-6 inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
-            >
-              Try PromptShield
-            </Link>
           </SectionCard>
         </section>
       </div>

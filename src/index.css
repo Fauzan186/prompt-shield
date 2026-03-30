@@ -94,6 +94,18 @@ textarea {
   }
 }
 
+@keyframes soft-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
+}
+
 .orb {
   position: absolute;
   border-radius: 9999px;
@@ -143,4 +155,8 @@ textarea {
   background: linear-gradient(90deg, transparent, rgba(94, 234, 212, 0.22), transparent);
   box-shadow: 0 0 18px rgba(94, 234, 212, 0.08);
   animation: shimmer-line 12s linear infinite;
+}
+
+.privacy-pulse {
+  animation: soft-pulse 3s ease-in-out infinite;
 }
