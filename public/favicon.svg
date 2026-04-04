@@ -1,13 +1,19 @@
 <svg width="64" height="64" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="favicon-fill" x1="22" y1="20" x2="103" y2="108" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FB7185"/>
-      <stop offset="0.5" stop-color="#F97316"/>
-      <stop offset="1" stop-color="#FDBA74"/>
+    <linearGradient id="bg-fill" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FB923C"/>
+      <stop offset="0.56" stop-color="#F97316"/>
+      <stop offset="1" stop-color="#F43F5E"/>
+    </linearGradient>
+    <linearGradient id="glow-fill" x1="40" y1="30" x2="88" y2="98" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#FFF7ED"/>
     </linearGradient>
   </defs>
-  <rect x="8" y="8" width="112" height="112" rx="34" fill="#0F172A"/>
-  <path d="M64 22L96 34V58C96 79.5 83 98.9 64 108C45 98.9 32 79.5 32 58V34L64 22Z" fill="url(#favicon-fill)"/>
-  <path d="M64 44C54.1 44 46 52.1 46 62C46 71.9 54.1 80 64 80C73.9 80 82 71.9 82 62C82 52.1 73.9 44 64 44ZM64 52C69.5 52 74 56.5 74 62C74 67.5 69.5 72 64 72C58.5 72 54 67.5 54 62C54 56.5 58.5 52 64 52Z" fill="#FFF7ED"/>
-  <circle cx="64" cy="62" r="6" fill="#F97316"/>
+  <rect x="8" y="8" width="112" height="112" rx="32" fill="url(#bg-fill)"/>
+  <rect x="8.5" y="8.5" width="111" height="111" rx="31.5" stroke="white" stroke-opacity="0.18"/>
+  <path d="M64 24L92 35V57C92 77.8 80.7 95.4 64 104C47.3 95.4 36 77.8 36 57V35L64 24Z" fill="#FFFFFF" fill-opacity="0.2"/>
+  <path d="M64 30L87 39V56.3C87 72.1 77.9 86 64 93.7C50.1 86 41 72.1 41 56.3V39L64 30Z" fill="url(#glow-fill)"/>
+  <path d="M64 46C55.2 46 48 53.2 48 62C48 70.8 55.2 78 64 78C72.8 78 80 70.8 80 62C80 53.2 72.8 46 64 46ZM64 53C68.9 53 73 57.1 73 62C73 66.9 68.9 71 64 71C59.1 71 55 66.9 55 62C55 57.1 59.1 53 64 53Z" fill="#F97316"/>
+  <circle cx="64" cy="62" r="5.5" fill="#FFFFFF"/>
 </svg>

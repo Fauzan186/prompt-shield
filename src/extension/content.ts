@@ -31,7 +31,6 @@ interface DetectionRule {
 interface ExtensionSettings {
   enabled: boolean;
   mode: SanitizeMode;
-  autoMaskEnabled: boolean;
   blockSubmissionEnabled: boolean;
   customDictionaryEnabled: boolean;
   customPatternsEnabled: boolean;
@@ -56,7 +55,6 @@ const formSelector = 'input, textarea, [contenteditable="true"], [contenteditabl
 const defaultSettings: ExtensionSettings = {
   enabled: true,
   mode: 'replace',
-  autoMaskEnabled: true,
   blockSubmissionEnabled: false,
   customDictionaryEnabled: false,
   customPatternsEnabled: false,
@@ -751,7 +749,7 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
 document.addEventListener(
   'input',
   (event) => {
-    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled || !shouldSanitizeOnInput(event)) {
+    if (!currentSettings.enabled || !shouldSanitizeOnInput(event)) {
       return;
     }
 
@@ -769,7 +767,7 @@ document.addEventListener(
 document.addEventListener(
   'blur',
   (event) => {
-    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled) {
+    if (!currentSettings.enabled) {
       return;
     }
 
@@ -787,7 +785,7 @@ document.addEventListener(
 document.addEventListener(
   'change',
   (event) => {
-    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled) {
+    if (!currentSettings.enabled) {
       return;
     }
 
@@ -805,7 +803,7 @@ document.addEventListener(
 document.addEventListener(
   'paste',
   (event) => {
-    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled) {
+    if (!currentSettings.enabled) {
       return;
     }
 

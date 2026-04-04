@@ -5,7 +5,6 @@ import type { SanitizeMode } from '@/types/prompt';
 interface ExtensionSettings {
   enabled: boolean;
   mode: SanitizeMode;
-  autoMaskEnabled: boolean;
   blockSubmissionEnabled: boolean;
   customDictionaryEnabled: boolean;
   customPatternsEnabled: boolean;
@@ -36,7 +35,6 @@ const STATS_KEY = 'promptshield_stats';
 const defaultSettings: ExtensionSettings = {
   enabled: true,
   mode: 'replace',
-  autoMaskEnabled: true,
   blockSubmissionEnabled: false,
   customDictionaryEnabled: false,
   customPatternsEnabled: false,
@@ -47,11 +45,7 @@ const defaultSettings: ExtensionSettings = {
 const defaultStats: ExtensionStats = {
   popupOpens: 0,
   protectedItems: 0,
-  modeUsage: {
-    mask: 0,
-    replace: 0,
-    remove: 0,
-  },
+  modeUsage: { mask: 0, replace: 0, remove: 0 },
 };
 
 const modeOptions: Array<{ label: string; value: SanitizeMode }> = [
@@ -118,7 +112,6 @@ export const ExtensionPopupApp = () => {
     storage.get([STORAGE_KEY], (result) => {
       const stored = result[STORAGE_KEY] as ExtensionSettings | undefined;
       const nextSettings = stored ? { ...defaultSettings, ...stored } : defaultSettings;
-
       setSettings(nextSettings);
 
       storage.get([STATS_KEY], (statsResult) => {
@@ -143,7 +136,6 @@ export const ExtensionPopupApp = () => {
 
   useEffect(() => {
     const storage = typeof chrome === 'undefined' ? undefined : chrome.storage?.local;
-
     if (!hasLoadedSettings || !storage) {
       return;
     }
@@ -153,7 +145,6 @@ export const ExtensionPopupApp = () => {
 
   const addRuleItem = () => {
     const value = ruleDraft.trim();
-
     if (!value) {
       return;
     }
@@ -219,9 +210,7 @@ export const ExtensionPopupApp = () => {
               <div className="flex items-center gap-3">
                 <img src="/logo-mark.svg" alt="PromptShield logo" className="h-11 w-11 rounded-2xl" />
                 <div>
-                  <div className="text-sm font-semibold tracking-[0.18em] text-slate-100">
-                    PROMPTSHIELD
-                  </div>
+                  <div className="text-sm font-semibold tracking-[0.18em] text-slate-100">PROMPTSHIELD</div>
                   <div className="text-xs text-slate-400">Chrome Extension</div>
                 </div>
               </div>
@@ -241,27 +230,24 @@ export const ExtensionPopupApp = () => {
               </div>
             </div>
 
+            <div className="mt-3 rounded-[1rem] bg-white/[0.04] px-3 py-2 text-xs text-slate-300">
+              Protect your prompts. Prevent data leaks.
+            </div>
+
             <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="rounded-[1.2rem] bg-white/[0.04] px-3 py-2.5">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Built-in
-                </div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Built-in</div>
                 <div className="mt-1 text-base font-semibold text-white">{builtInPatternCount}</div>
               </div>
               <div className="rounded-[1.2rem] bg-white/[0.04] px-3 py-2.5">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Protected
-                </div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Protected</div>
                 <div className="mt-1 text-base font-semibold text-white">{stats.protectedItems}</div>
               </div>
               <div className="rounded-[1.2rem] bg-white/[0.04] px-3 py-2.5">
-                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">
-                  Custom
-                </div>
+                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Custom</div>
                 <div className="mt-1 text-base font-semibold text-white">{savedRules.length}</div>
               </div>
             </div>
-
           </header>
 
           <section className="rounded-[1.5rem] border border-white/10 bg-slate-900/70 p-4 backdrop-blur">
@@ -272,9 +258,7 @@ export const ExtensionPopupApp = () => {
 
             <div>
               <div className="mb-2 flex items-center justify-between">
-                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                  Choose mode
-                </div>
+                <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Choose mode</div>
                 <div className="text-[11px] text-slate-500">Mask, replace, or remove</div>
               </div>
               <div className="grid grid-cols-3 gap-2">
@@ -285,12 +269,7 @@ export const ExtensionPopupApp = () => {
                     <button
                       key={option.value}
                       type="button"
-                      onClick={() =>
-                        setSettings((current) => ({
-                          ...current,
-                          mode: option.value,
-                        }))
-                      }
+                      onClick={() => setSettings((current) => ({ ...current, mode: option.value }))}
                       className={`rounded-xl border px-3 py-2 text-xs font-semibold transition ${
                         active
                           ? 'border-orange-300/20 bg-[linear-gradient(135deg,rgba(249,115,22,0.16),rgba(251,113,133,0.1))] text-orange-50 shadow-[0_14px_24px_rgba(249,115,22,0.08)]'
@@ -332,24 +311,7 @@ export const ExtensionPopupApp = () => {
                 label="Enable PromptShield"
                 description="Turn website protection on or off."
                 checked={settings.enabled}
-                onChange={(checked) =>
-                  setSettings((current) => ({
-                    ...current,
-                    enabled: checked,
-                  }))
-                }
-              />
-
-              <SettingToggle
-                label="Auto mask while typing"
-                description="Mask supported input fields automatically."
-                checked={settings.autoMaskEnabled}
-                onChange={(checked) =>
-                  setSettings((current) => ({
-                    ...current,
-                    autoMaskEnabled: checked,
-                  }))
-                }
+                onChange={(checked) => setSettings((current) => ({ ...current, enabled: checked }))}
               />
 
               <SettingToggle
@@ -357,10 +319,7 @@ export const ExtensionPopupApp = () => {
                 description="Review sensitive prompts before they are sent."
                 checked={settings.blockSubmissionEnabled}
                 onChange={(checked) =>
-                  setSettings((current) => ({
-                    ...current,
-                    blockSubmissionEnabled: checked,
-                  }))
+                  setSettings((current) => ({ ...current, blockSubmissionEnabled: checked }))
                 }
               />
             </div>
@@ -369,9 +328,7 @@ export const ExtensionPopupApp = () => {
               <div className="rounded-[1.2rem] border border-slate-800 bg-slate-950/55 p-3">
                 <div className="mb-3 flex items-center justify-between">
                   <div className="pr-3">
-                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                      Custom Rules
-                    </div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Custom Rules</div>
                     <p className="mt-1 text-[11px] leading-5 text-slate-500">
                       Add dictionary words or regex patterns, then manage them in one shared list.
                     </p>
@@ -424,9 +381,7 @@ export const ExtensionPopupApp = () => {
                       <input
                         value={ruleDraft}
                         onChange={(event) => setRuleDraft(event.target.value)}
-                        placeholder={
-                          ruleInputType === 'dictionary' ? 'Acme Internal or CLIENT-7842' : 'INV-\\d{4,}'
-                        }
+                        placeholder={ruleInputType === 'dictionary' ? 'Acme Internal or CLIENT-7842' : 'INV-\\d{4,}'}
                         className="min-w-0 flex-1 rounded-[1rem] border border-slate-800 bg-slate-950/85 px-3 py-2.5 text-xs text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-accent-400 focus:ring-2 focus:ring-accent-500/20"
                       />
                       <Button variant="secondary" onClick={addRuleItem} className="gap-1 px-3 py-2.5 text-xs">
@@ -497,7 +452,6 @@ export const ExtensionPopupApp = () => {
               </a>
               . All rights reserved.
             </div>
-            <div className="text-slate-400">Protect your prompts. Prevent data leaks.</div>
             <div>Detection is best-effort and not a guarantee.</div>
           </footer>
         </div>
