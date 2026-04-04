@@ -26,6 +26,9 @@ export const SiteFooter = () => {
             <Link to="/terms" className="transition hover:text-white">
               Terms
             </Link>
+            <Link to="/contact" className="transition hover:text-white">
+              Contact Us
+            </Link>
           </div>
         </div>
 

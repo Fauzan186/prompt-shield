@@ -29,30 +29,69 @@ interface DetectionRule {
 }
 
 interface ExtensionSettings {
+  enabled: boolean;
   mode: SanitizeMode;
   autoMaskEnabled: boolean;
   blockSubmissionEnabled: boolean;
+  customDictionaryEnabled: boolean;
+  customPatternsEnabled: boolean;
   customDictionary: string[];
   customPatterns: string[];
+}
+
+interface ExtensionStats {
+  popupOpens: number;
+  protectedItems: number;
+  modeUsage: Record<SanitizeMode, number>;
 }
 
 type EditableTarget = HTMLInputElement | HTMLTextAreaElement | HTMLElement;
 
 const STORAGE_KEY = 'promptshield_settings';
+const STATS_KEY = 'promptshield_stats';
 const INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel']);
 const processingTargets = new WeakSet<EventTarget>();
 const formSelector = 'input, textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
 
 const defaultSettings: ExtensionSettings = {
+  enabled: true,
   mode: 'replace',
   autoMaskEnabled: true,
-  blockSubmissionEnabled: true,
+  blockSubmissionEnabled: false,
+  customDictionaryEnabled: false,
+  customPatternsEnabled: false,
   customDictionary: [],
   customPatterns: [],
 };
 
 let currentSettings: ExtensionSettings = { ...defaultSettings };
 let toastTimeout = 0;
+const reviewBypassTargets = new WeakMap<EventTarget, number>();
+const reviewBypassForms = new WeakMap<HTMLFormElement, number>();
+
+const incrementProtectionStats = (mode: SanitizeMode, count: number) => {
+  const storage = typeof chrome === 'undefined' ? undefined : chrome.storage?.local;
+
+  if (!storage || count <= 0) {
+    return;
+  }
+
+  storage.get([STATS_KEY], (result) => {
+    const current = result[STATS_KEY] as ExtensionStats | undefined;
+    const nextStats: ExtensionStats = {
+      popupOpens: current?.popupOpens ?? 0,
+      protectedItems: (current?.protectedItems ?? 0) + count,
+      modeUsage: {
+        mask: current?.modeUsage?.mask ?? 0,
+        replace: current?.modeUsage?.replace ?? 0,
+        remove: current?.modeUsage?.remove ?? 0,
+      },
+    };
+
+    nextStats.modeUsage[mode] += 1;
+    storage.set({ [STATS_KEY]: nextStats });
+  });
+};
 
 const stripNonDigits = (value: string): string => value.replace(/\D/g, '');
 
@@ -207,36 +246,40 @@ const parseCustomPatterns = (patterns: string[]): RegExp[] =>
 const findCustomItems = (text: string, settings: ExtensionSettings): DetectedItem[] => {
   const items: DetectedItem[] = [];
 
-  settings.customDictionary.forEach((entry, index) => {
-    if (!entry) {
-      return;
-    }
+  if (settings.customDictionaryEnabled) {
+    settings.customDictionary.forEach((entry, index) => {
+      if (!entry) {
+        return;
+      }
 
-    const regex = new RegExp(escapeRegExp(entry), 'gi');
-    const matches = text.match(regex);
+      const regex = new RegExp(escapeRegExp(entry), 'gi');
+      const matches = text.match(regex);
 
-    matches?.forEach((value, matchIndex) => {
-      items.push({
-        id: `custom-dictionary-${index}-${matchIndex}`,
-        type: 'custom',
-        value,
-        label: 'Custom Dictionary',
+      matches?.forEach((value, matchIndex) => {
+        items.push({
+          id: `custom-dictionary-${index}-${matchIndex}`,
+          type: 'custom',
+          value,
+          label: 'Custom Dictionary',
+        });
       });
     });
-  });
+  }
 
-  parseCustomPatterns(settings.customPatterns).forEach((regex, index) => {
-    const matches = text.match(regex);
+  if (settings.customPatternsEnabled) {
+    parseCustomPatterns(settings.customPatterns).forEach((regex, index) => {
+      const matches = text.match(regex);
 
-    matches?.forEach((value, matchIndex) => {
-      items.push({
-        id: `custom-pattern-${index}-${matchIndex}`,
-        type: 'custom',
-        value,
-        label: 'Custom Pattern',
+      matches?.forEach((value, matchIndex) => {
+        items.push({
+          id: `custom-pattern-${index}-${matchIndex}`,
+          type: 'custom',
+          value,
+          label: 'Custom Pattern',
+        });
       });
     });
-  });
+  }
 
   return items;
 };
@@ -244,22 +287,26 @@ const findCustomItems = (text: string, settings: ExtensionSettings): DetectedIte
 const applyCustomRules = (text: string, settings: ExtensionSettings): string => {
   let nextText = text;
 
-  settings.customDictionary.forEach((entry) => {
-    if (!entry) {
-      return;
-    }
+  if (settings.customDictionaryEnabled) {
+    settings.customDictionary.forEach((entry) => {
+      if (!entry) {
+        return;
+      }
 
-    const regex = new RegExp(escapeRegExp(entry), 'gi');
-    nextText = nextText.replace(regex, (match) =>
-      createReplacement(match, settings.mode, '[CUSTOM_TERM]'),
-    );
-  });
+      const regex = new RegExp(escapeRegExp(entry), 'gi');
+      nextText = nextText.replace(regex, (match) =>
+        createReplacement(match, settings.mode, '[CUSTOM_TERM]'),
+      );
+    });
+  }
 
-  parseCustomPatterns(settings.customPatterns).forEach((regex) => {
-    nextText = nextText.replace(regex, (match) =>
-      createReplacement(match, settings.mode, '[CUSTOM_PATTERN]'),
-    );
-  });
+  if (settings.customPatternsEnabled) {
+    parseCustomPatterns(settings.customPatterns).forEach((regex) => {
+      nextText = nextText.replace(regex, (match) =>
+        createReplacement(match, settings.mode, '[CUSTOM_PATTERN]'),
+      );
+    });
+  }
 
   return nextText;
 };
@@ -345,16 +392,22 @@ const updateSelectionForInput = (
 };
 
 const sanitizeEditableTarget = (target: EditableTarget) => {
+  if (!currentSettings.enabled) {
+    return;
+  }
+
   if (processingTargets.has(target)) {
     return;
   }
 
   const originalValue = getValue(target);
-  const { sanitizedText } = sanitizeText(originalValue, currentSettings);
+  const { sanitizedText, detectedItems } = sanitizeText(originalValue, currentSettings);
 
   if (!sanitizedText || sanitizedText === originalValue) {
     return;
   }
+
+  incrementProtectionStats(currentSettings.mode, detectedItems.length);
 
   processingTargets.add(target);
 
@@ -397,6 +450,9 @@ const shouldSanitizeOnInput = (event: Event): boolean => {
 };
 
 const getSensitiveItems = (value: string): DetectedItem[] => sanitizeText(value, currentSettings).detectedItems;
+
+const isBypassed = (value: number | undefined): boolean =>
+  typeof value === 'number' && Date.now() - value < 2500;
 
 const ensureToast = (): HTMLDivElement => {
   let toast = document.getElementById('promptshield-toast') as HTMLDivElement | null;
@@ -445,8 +501,206 @@ const showToast = (message: string) => {
   }, 2400);
 };
 
+const ensureReviewModal = () => {
+  let overlay = document.getElementById('promptshield-review-overlay') as HTMLDivElement | null;
+
+  if (overlay) {
+    return overlay;
+  }
+
+  overlay = document.createElement('div');
+  overlay.id = 'promptshield-review-overlay';
+  overlay.style.position = 'fixed';
+  overlay.style.inset = '0';
+  overlay.style.zIndex = '2147483647';
+  overlay.style.display = 'none';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.padding = '20px';
+  overlay.style.background = 'rgba(2, 6, 23, 0.55)';
+  overlay.style.backdropFilter = 'blur(10px)';
+
+  const panel = document.createElement('div');
+  panel.style.width = 'min(460px, 100%)';
+  panel.style.borderRadius = '24px';
+  panel.style.border = '1px solid rgba(255,255,255,0.08)';
+  panel.style.background =
+    'linear-gradient(180deg, rgba(15,23,42,0.97), rgba(17,24,39,0.97))';
+  panel.style.boxShadow = '0 28px 80px rgba(2, 6, 23, 0.4)';
+  panel.style.padding = '22px';
+  panel.style.color = '#f8fafc';
+  panel.style.fontFamily =
+    'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+
+  const eyebrow = document.createElement('div');
+  eyebrow.textContent = 'Review Before Send';
+  eyebrow.style.fontSize = '11px';
+  eyebrow.style.fontWeight = '700';
+  eyebrow.style.letterSpacing = '0.18em';
+  eyebrow.style.textTransform = 'uppercase';
+  eyebrow.style.color = '#fdba74';
+
+  const title = document.createElement('h3');
+  title.textContent = 'Sensitive data is still present in this prompt.';
+  title.style.margin = '10px 0 0';
+  title.style.fontSize = '20px';
+  title.style.lineHeight = '1.3';
+  title.style.fontWeight = '600';
+
+  const message = document.createElement('p');
+  message.id = 'promptshield-review-message';
+  message.style.margin = '10px 0 0';
+  message.style.fontSize = '14px';
+  message.style.lineHeight = '1.7';
+  message.style.color = '#cbd5e1';
+
+  const list = document.createElement('div');
+  list.id = 'promptshield-review-list';
+  list.style.marginTop = '16px';
+  list.style.display = 'grid';
+  list.style.gap = '10px';
+
+  const actions = document.createElement('div');
+  actions.style.marginTop = '18px';
+  actions.style.display = 'flex';
+  actions.style.justifyContent = 'flex-end';
+  actions.style.gap = '10px';
+
+  const editButton = document.createElement('button');
+  editButton.id = 'promptshield-review-edit';
+  editButton.type = 'button';
+  editButton.textContent = 'Keep editing';
+  editButton.style.borderRadius = '999px';
+  editButton.style.border = '1px solid rgba(255,255,255,0.1)';
+  editButton.style.background = 'rgba(15,23,42,0.88)';
+  editButton.style.color = '#e2e8f0';
+  editButton.style.padding = '11px 16px';
+  editButton.style.fontSize = '13px';
+  editButton.style.fontWeight = '600';
+  editButton.style.cursor = 'pointer';
+
+  const sendButton = document.createElement('button');
+  sendButton.id = 'promptshield-review-send';
+  sendButton.type = 'button';
+  sendButton.textContent = 'Send anyway';
+  sendButton.style.borderRadius = '999px';
+  sendButton.style.border = '1px solid rgba(253,186,116,0.25)';
+  sendButton.style.background =
+    'linear-gradient(135deg, rgba(249,115,22,0.98), rgba(251,113,133,0.92))';
+  sendButton.style.color = '#fff7ed';
+  sendButton.style.padding = '11px 16px';
+  sendButton.style.fontSize = '13px';
+  sendButton.style.fontWeight = '700';
+  sendButton.style.cursor = 'pointer';
+  sendButton.style.boxShadow = '0 14px 30px rgba(249,115,22,0.22)';
+
+  actions.append(editButton, sendButton);
+  panel.append(eyebrow, title, message, list, actions);
+  overlay.appendChild(panel);
+  document.body.appendChild(overlay);
+
+  return overlay;
+};
+
+const showReviewModal = (
+  detectedItems: DetectedItem[],
+): Promise<'send' | 'edit'> =>
+  new Promise((resolve) => {
+    const overlay = ensureReviewModal();
+    const message = overlay.querySelector('#promptshield-review-message') as HTMLParagraphElement;
+    const list = overlay.querySelector('#promptshield-review-list') as HTMLDivElement;
+    const editButton = overlay.querySelector('#promptshield-review-edit') as HTMLButtonElement;
+    const sendButton = overlay.querySelector('#promptshield-review-send') as HTMLButtonElement;
+
+    message.textContent = `PromptShield found ${detectedItems.length} sensitive match${
+      detectedItems.length === 1 ? '' : 'es'
+    }. Review before sending this prompt.`;
+
+    const previewItems = detectedItems.slice(0, 4);
+    list.innerHTML = '';
+
+    previewItems.forEach((item) => {
+      const row = document.createElement('div');
+      row.style.border = '1px solid rgba(255,255,255,0.06)';
+      row.style.borderRadius = '16px';
+      row.style.background = 'rgba(255,255,255,0.03)';
+      row.style.padding = '10px 12px';
+
+      const label = document.createElement('div');
+      label.textContent = item.label;
+      label.style.fontSize = '12px';
+      label.style.fontWeight = '700';
+      label.style.color = '#f8fafc';
+
+      const value = document.createElement('div');
+      value.textContent = item.value;
+      value.style.marginTop = '4px';
+      value.style.fontSize = '12px';
+      value.style.lineHeight = '1.6';
+      value.style.color = '#94a3b8';
+      value.style.wordBreak = 'break-all';
+
+      row.append(label, value);
+      list.appendChild(row);
+    });
+
+    if (detectedItems.length > 4) {
+      const extra = document.createElement('div');
+      extra.textContent = `+${detectedItems.length - 4} more detected item${
+        detectedItems.length - 4 === 1 ? '' : 's'
+      }`;
+      extra.style.fontSize = '12px';
+      extra.style.color = '#94a3b8';
+      extra.style.padding = '0 4px';
+      list.appendChild(extra);
+    }
+
+    const cleanup = () => {
+      overlay.style.display = 'none';
+      editButton.onclick = null;
+      sendButton.onclick = null;
+    };
+
+    overlay.style.display = 'flex';
+
+    editButton.onclick = () => {
+      cleanup();
+      resolve('edit');
+    };
+
+    sendButton.onclick = () => {
+      cleanup();
+      resolve('send');
+    };
+  });
+
+const attemptSendFromTarget = (target: EditableTarget) => {
+  const targetElement = target as HTMLElement;
+  const form = targetElement.closest('form');
+
+  if (form instanceof HTMLFormElement) {
+    reviewBypassForms.set(form, Date.now());
+    form.requestSubmit();
+    return;
+  }
+
+  const sendButton = targetElement
+    .closest('[role="dialog"], form, main, body')
+    ?.querySelector<HTMLElement>(
+      'button[aria-label*="send" i], button[title*="send" i], button[data-testid*="send" i], button[type="submit"], [role="button"][aria-label*="send" i]',
+    );
+
+  if (sendButton) {
+    reviewBypassTargets.set(target, Date.now());
+    sendButton.click();
+    return;
+  }
+
+  showToast('PromptShield could not find a send action. Edit the prompt or try again.');
+};
+
 const shouldBlockSubmission = (value: string): boolean => {
-  if (!currentSettings.blockSubmissionEnabled) {
+  if (!currentSettings.enabled || !currentSettings.blockSubmissionEnabled) {
     return false;
   }
 
@@ -497,7 +751,7 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
 document.addEventListener(
   'input',
   (event) => {
-    if (!currentSettings.autoMaskEnabled || !shouldSanitizeOnInput(event)) {
+    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled || !shouldSanitizeOnInput(event)) {
       return;
     }
 
@@ -515,7 +769,7 @@ document.addEventListener(
 document.addEventListener(
   'blur',
   (event) => {
-    if (!currentSettings.autoMaskEnabled) {
+    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled) {
       return;
     }
 
@@ -533,7 +787,7 @@ document.addEventListener(
 document.addEventListener(
   'change',
   (event) => {
-    if (!currentSettings.autoMaskEnabled) {
+    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled) {
       return;
     }
 
@@ -551,7 +805,7 @@ document.addEventListener(
 document.addEventListener(
   'paste',
   (event) => {
-    if (!currentSettings.autoMaskEnabled) {
+    if (!currentSettings.enabled || !currentSettings.autoMaskEnabled) {
       return;
     }
 
@@ -568,7 +822,11 @@ document.addEventListener(
 
 document.addEventListener(
   'keydown',
-  (event) => {
+  async (event) => {
+    if (!currentSettings.enabled) {
+      return;
+    }
+
     if (event.key !== 'Enter' || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
       return;
     }
@@ -579,35 +837,58 @@ document.addEventListener(
       return;
     }
 
-    if (!shouldBlockSubmission(getValue(target))) {
+    if (isBypassed(reviewBypassTargets.get(target))) {
+      reviewBypassTargets.delete(target);
+      return;
+    }
+
+    const detectedItems = getSensitiveItems(getValue(target));
+
+    if (!currentSettings.blockSubmissionEnabled || detectedItems.length === 0) {
       return;
     }
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    showToast('PromptShield blocked send because sensitive data is still present.');
+
+    const decision = await showReviewModal(detectedItems);
+
+    if (decision === 'send') {
+      attemptSendFromTarget(target);
+    }
   },
   true,
 );
 
 document.addEventListener(
   'submit',
-  (event) => {
+  async (event) => {
     const form = event.target instanceof HTMLFormElement ? event.target : null;
 
-    if (!form || !currentSettings.blockSubmissionEnabled) {
+    if (!form || !currentSettings.enabled || !currentSettings.blockSubmissionEnabled) {
       return;
     }
 
-    const hasSensitiveData = getFormFieldValues(form).some((value) => shouldBlockSubmission(value));
+    if (isBypassed(reviewBypassForms.get(form))) {
+      reviewBypassForms.delete(form);
+      return;
+    }
 
-    if (!hasSensitiveData) {
+    const detectedItems = getFormFieldValues(form).flatMap((value) => getSensitiveItems(value));
+
+    if (detectedItems.length === 0) {
       return;
     }
 
     event.preventDefault();
     event.stopImmediatePropagation();
-    showToast('PromptShield stopped this submission. Review and sanitize the prompt first.');
+
+    const decision = await showReviewModal(detectedItems);
+
+    if (decision === 'send') {
+      reviewBypassForms.set(form, Date.now());
+      form.requestSubmit();
+    }
   },
   true,
 );

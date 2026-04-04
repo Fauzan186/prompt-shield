@@ -12,36 +12,29 @@ const sections = [
   {
     title: 'Overview',
     body: [
-      'PromptShield is designed to process prompt text locally in your browser. The website and extension are intended to help users identify and sanitize sensitive content before sharing prompts with AI tools or other systems.',
-      'We do not intentionally collect or transmit the prompt content you scan through the core browser-based sanitization flow.',
-    ],
-  },
-  {
-    title: 'What PromptShield Processes',
-    body: [
-      'PromptShield may process prompt text, extension settings, and user-defined detection rules directly inside your browser so the sanitization features can function.',
-      'When you use custom dictionary entries or custom regex patterns, those values may be stored locally in your browser storage to preserve your settings across sessions.',
+      'PromptShield processes prompt text locally in your browser to help users identify and sanitize sensitive content before sharing prompts with AI tools or other systems.',
+      'PromptShield does NOT collect, store, or transmit any prompt content or personal data.',
     ],
   },
   {
     title: 'Local-First Processing',
     body: [
-      'Prompt text entered into PromptShield is intended to be processed locally in the browser.',
-      'PromptShield is not designed to send your prompt content to a PromptShield backend for sanitization as part of its core functionality.',
+      'All prompt analysis and sanitization is performed locally within your browser.',
+      'PromptShield does NOT send your prompt content to any backend, server, or third party.',
     ],
   },
   {
     title: 'Browser Storage',
     body: [
       'The Chrome extension may store configuration choices such as sanitization mode, auto-mask preferences, accidental-send blocking preferences, custom dictionary terms, and custom patterns using browser-provided local storage.',
-      'This local storage is used to make the extension work consistently for you on your device and browser profile.',
+      'This local storage is used only to make the extension function consistently for you on your device and browser profile.',
     ],
   },
   {
     title: 'Third-Party Websites',
     body: [
       'If you use the extension on third-party websites, those websites operate under their own terms and privacy practices.',
-      'PromptShield can help reduce accidental disclosure, but you remain responsible for reviewing what you send to external platforms.',
+      'PromptShield helps reduce accidental disclosure, but you remain responsible for reviewing what you send to external platforms.',
     ],
   },
   {
@@ -53,7 +46,16 @@ const sections = [
   },
   {
     title: 'Changes',
-    body: ['This Privacy Policy may be updated over time as the product evolves.'],
+    body: [
+      'This Privacy Policy may be updated over time as the product evolves. Updates will be reflected on this page.',
+    ],
+  },
+  {
+    title: 'Contact',
+    body: [
+      'If you have any questions about this Privacy Policy, contact:',
+      'Email: fauzan.khan186@outlook.com',
+    ],
   },
 ];
 
@@ -75,8 +77,7 @@ export const PrivacyPage = () => {
               Privacy-first by design, with local browser processing at the core.
             </h1>
             <p className="max-w-3xl text-sm leading-7 text-slate-300 sm:text-base">
-              This page explains how PromptShield handles prompt processing, local settings, and product
-              limitations in plain language.
+              This page explains how PromptShield handles prompt processing, local settings, and product limitations in plain language.
             </p>
           </div>
 
