@@ -2,9 +2,18 @@ export type SanitizeMode = 'mask' | 'replace' | 'remove';
 
 export type DetectedItemType =
   | 'apiKey'
+  | 'awsKey'
+  | 'credential'
+  | 'banking'
+  | 'privateKey'
   | 'email'
   | 'phone'
   | 'url'
+  | 'slackWebhook'
+  | 'ipAddress'
+  | 'ssn'
+  | 'dob'
+  | 'iban'
   | 'creditCard'
   | 'token';
 

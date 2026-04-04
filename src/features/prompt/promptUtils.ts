@@ -1,96 +1,36 @@
+import { builtInPatterns } from '@/features/prompt/builtInPatterns';
 import type { DetectedItem, DetectedItemType, SanitizeMode, SanitizeResult } from '@/types/prompt';
 
-interface DetectionRule {
-  type: DetectedItemType;
-  label: string;
-  pattern: RegExp;
-  replacementToken: string;
-  validate?: (value: string) => boolean;
+interface PatternMatch {
+  start: number;
+  end: number;
+  value: string;
+  ruleIndex: number;
 }
 
-const stripNonDigits = (value: string): string => value.replace(/\D/g, '');
+const preserveEdgeMask = (value: string): string => {
+  const leadingWhitespace = value.match(/^\s*/)?.[0] ?? '';
+  const trailingWhitespace = value.match(/\s*$/)?.[0] ?? '';
+  const coreValue = value.slice(leadingWhitespace.length, value.length - trailingWhitespace.length);
 
-const isLikelyCreditCard = (value: string): boolean => {
-  const digits = stripNonDigits(value);
-
-  if (digits.length < 13 || digits.length > 19) {
-    return false;
+  if (!coreValue) {
+    return value;
   }
 
-  let sum = 0;
-  let shouldDouble = false;
-
-  for (let index = digits.length - 1; index >= 0; index -= 1) {
-    let digit = Number(digits[index]);
-
-    if (shouldDouble) {
-      digit *= 2;
-
-      if (digit > 9) {
-        digit -= 9;
-      }
-    }
-
-    sum += digit;
-    shouldDouble = !shouldDouble;
+  if (coreValue.length === 1) {
+    return `${leadingWhitespace}*${trailingWhitespace}`;
   }
 
-  return sum % 10 === 0;
+  if (coreValue.length === 2) {
+    return `${leadingWhitespace}${coreValue[0]}*${trailingWhitespace}`;
+  }
+
+  const visibleStart = coreValue[0];
+  const visibleEnd = coreValue[coreValue.length - 1];
+  const maskedMiddle = '*'.repeat(coreValue.length - 2);
+
+  return `${leadingWhitespace}${visibleStart}${maskedMiddle}${visibleEnd}${trailingWhitespace}`;
 };
-
-const isLikelyToken = (value: string): boolean => {
-  if (value.startsWith('Bearer ')) {
-    return value.length >= 24;
-  }
-
-  if (value.startsWith('eyJ')) {
-    return value.split('.').length === 3;
-  }
-
-  return value.length >= 16;
-};
-
-const detectionRules: DetectionRule[] = [
-  {
-    type: 'apiKey',
-    label: 'API Key',
-    pattern: /\b(?:sk|pk|rk|pat|ghp|ghu|ghs|ghr|xox[baprs]|AIza)[-_A-Za-z0-9]{10,}\b/g,
-    replacementToken: '[API_KEY]',
-  },
-  {
-    type: 'email',
-    label: 'Email',
-    pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
-    replacementToken: '[EMAIL]',
-  },
-  {
-    type: 'phone',
-    label: 'Phone Number',
-    pattern: /\b(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3}[\s.-]?\d{4,6}\b/g,
-    replacementToken: '[PHONE]',
-  },
-  {
-    type: 'url',
-    label: 'URL',
-    pattern: /\bhttps?:\/\/[^\s/$.?#].[^\s]*\b/gi,
-    replacementToken: '[URL]',
-  },
-  {
-    type: 'creditCard',
-    label: 'Credit Card',
-    pattern: /\b(?:\d[ -]*?){13,19}\b/g,
-    replacementToken: '[CREDIT_CARD]',
-    validate: isLikelyCreditCard,
-  },
-  {
-    type: 'token',
-    label: 'Access Token',
-    pattern:
-      /\b(?:Bearer\s+[A-Za-z0-9\-._~+/]+=*|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9._-]+\.[A-Za-z0-9._-]+|(?:token|access_token|refresh_token)[=:][A-Za-z0-9._-]{16,})\b/g,
-    replacementToken: '[TOKEN]',
-    validate: isLikelyToken,
-  },
-];
 
 const createReplacement = (value: string, mode: SanitizeMode, token: string): string => {
   if (mode === 'remove') {
@@ -101,11 +41,14 @@ const createReplacement = (value: string, mode: SanitizeMode, token: string): st
     return token;
   }
 
-  return '*'.repeat(Math.max(8, value.length));
+  return preserveEdgeMask(value);
 };
 
 const getUniqueId = (type: DetectedItemType, index: number, value: string): string =>
   `${type}-${index}-${value.slice(0, 12)}`;
+
+const overlaps = (left: PatternMatch, right: PatternMatch): boolean =>
+  left.start < right.end && right.start < left.end;
 
 export const sanitizePrompt = (input: string, mode: SanitizeMode): SanitizeResult => {
   if (!input.trim()) {
@@ -116,31 +59,64 @@ export const sanitizePrompt = (input: string, mode: SanitizeMode): SanitizeResul
   }
 
   const detectedItems: DetectedItem[] = [];
-  let sanitizedText = input;
+  const selectedMatches: Array<PatternMatch & { type: DetectedItemType; label: string; replacementToken: string }> =
+    [];
 
-  detectionRules.forEach((rule) => {
-    const matches = Array.from(input.matchAll(rule.pattern)).filter((match) => {
-      const value = match[0];
-      return rule.validate ? rule.validate(value) : true;
-    });
+  builtInPatterns.forEach((rule, ruleIndex) => {
+    rule.pattern.lastIndex = 0;
 
-    matches.forEach((match, index) => {
-      const value = match[0];
+    const matches = Array.from(input.matchAll(rule.pattern))
+      .map((match) => {
+        const value = match[0];
+        const start = match.index ?? -1;
 
-      detectedItems.push({
-        id: getUniqueId(rule.type, index, value),
-        type: rule.type,
-        value,
-        label: rule.label,
-      });
-    });
+        return {
+          value,
+          start,
+          end: start + value.length,
+          ruleIndex,
+        };
+      })
+      .filter((match) => match.start >= 0)
+      .filter((match) => (rule.validate ? rule.validate(match.value) : true))
+      .sort((left, right) => left.start - right.start);
 
     matches.forEach((match) => {
-      const value = match[0];
+      const hasOverlap = selectedMatches.some((selected) => overlaps(selected, match));
+      if (hasOverlap) {
+        return;
+      }
 
-      sanitizedText = sanitizedText.replace(value, createReplacement(value, mode, rule.replacementToken));
+      selectedMatches.push({
+        ...match,
+        type: rule.type,
+        label: rule.label,
+        replacementToken: rule.replacementToken,
+      });
     });
   });
+
+  selectedMatches.sort((left, right) => left.start - right.start);
+
+  selectedMatches.forEach((match, index) => {
+    detectedItems.push({
+      id: getUniqueId(match.type, index, match.value),
+      type: match.type,
+      value: match.value,
+      label: match.label,
+    });
+  });
+
+  let cursor = 0;
+  let sanitizedText = '';
+
+  selectedMatches.forEach((match) => {
+    sanitizedText += input.slice(cursor, match.start);
+    sanitizedText += createReplacement(match.value, mode, match.replacementToken);
+    cursor = match.end;
+  });
+
+  sanitizedText += input.slice(cursor);
 
   return {
     sanitizedText: sanitizedText.replace(/\n{3,}/g, '\n\n').trim(),

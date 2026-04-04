@@ -1,9 +1,18 @@
 type SanitizeMode = 'mask' | 'replace' | 'remove';
 type DetectedItemType =
   | 'apiKey'
+  | 'awsKey'
+  | 'credential'
+  | 'banking'
+  | 'privateKey'
   | 'email'
   | 'phone'
   | 'url'
+  | 'slackWebhook'
+  | 'ipAddress'
+  | 'ssn'
+  | 'dob'
+  | 'iban'
   | 'creditCard'
   | 'token'
   | 'custom';
@@ -28,6 +37,13 @@ interface DetectionRule {
   validate?: (value: string) => boolean;
 }
 
+interface PatternMatch {
+  start: number;
+  end: number;
+  value: string;
+  ruleIndex: number;
+}
+
 interface ExtensionSettings {
   enabled: boolean;
   mode: SanitizeMode;
@@ -44,13 +60,29 @@ interface ExtensionStats {
   modeUsage: Record<SanitizeMode, number>;
 }
 
-type EditableTarget = HTMLInputElement | HTMLTextAreaElement | HTMLElement;
+type EditableTarget = HTMLInputElement | HTMLTextAreaElement;
 
 const STORAGE_KEY = 'promptshield_settings';
 const STATS_KEY = 'promptshield_stats';
-const INPUT_TYPES = new Set(['text', 'search', 'email', 'url', 'tel']);
+const EXCLUDED_INPUT_TYPES = new Set([
+  'button',
+  'checkbox',
+  'color',
+  'date',
+  'datetime-local',
+  'file',
+  'hidden',
+  'image',
+  'month',
+  'radio',
+  'range',
+  'reset',
+  'submit',
+  'time',
+  'week',
+]);
 const processingTargets = new WeakSet<EventTarget>();
-const formSelector = 'input, textarea, [contenteditable="true"], [contenteditable="plaintext-only"]';
+const formSelector = 'input, textarea';
 
 const defaultSettings: ExtensionSettings = {
   enabled: true,
@@ -64,6 +96,7 @@ const defaultSettings: ExtensionSettings = {
 
 let currentSettings: ExtensionSettings = { ...defaultSettings };
 let toastTimeout = 0;
+let activeEditableTarget: EditableTarget | null = null;
 const reviewBypassTargets = new WeakMap<EventTarget, number>();
 const reviewBypassForms = new WeakMap<HTMLFormElement, number>();
 
@@ -135,12 +168,269 @@ const isLikelyToken = (value: string): boolean => {
   return value.length >= 16;
 };
 
+const isLikelyIban = (value: string): boolean => value.length >= 15 && value.length <= 34;
+
+const hasAtLeastOneDigit = (value: string): boolean => /\d/.test(value);
+
+const isLikelyPhone = (value: string): boolean => {
+  const digits = stripNonDigits(value);
+  return (
+    digits.length >= 7 &&
+    digits.length <= 15 &&
+    !/^(\d)\1+$/.test(digits) &&
+    !isLikelyCreditCard(value)
+  );
+};
+
+const monthNames =
+  '(?:jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|sept|september|oct|october|nov|november|dec|december)';
+
+const parseMonthToken = (value: string): number | null => {
+  const normalized = value.toLowerCase().slice(0, 3);
+  const months = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec'];
+  const index = months.indexOf(normalized);
+  return index === -1 ? null : index + 1;
+};
+
+const isLikelyDob = (value: string): boolean => {
+  const normalized = value
+    .replace(/\b(?:dob|date\s*of\s*birth|birthdate)\b\s*[:=-]?\s*/i, '')
+    .replace(/,/g, '')
+    .trim();
+
+  let year = 0;
+  let month = 0;
+  let day = 0;
+
+  const isoMatch = normalized.match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/);
+  if (isoMatch) {
+    year = Number(isoMatch[1]);
+    month = Number(isoMatch[2]);
+    day = Number(isoMatch[3]);
+  }
+
+  const numericMatch = normalized.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2,4})$/);
+  if (!year && numericMatch) {
+    day = Number(numericMatch[1]);
+    month = Number(numericMatch[2]);
+    year = Number(numericMatch[3].length === 2 ? `19${numericMatch[3]}` : numericMatch[3]);
+  }
+
+  const longMonthMatch = normalized.match(
+    new RegExp(`^(\\d{1,2})\\s+(${monthNames})\\s+(\\d{2,4})$`, 'i'),
+  );
+  if (!year && longMonthMatch) {
+    day = Number(longMonthMatch[1]);
+    month = parseMonthToken(longMonthMatch[2]) ?? 0;
+    year = Number(longMonthMatch[3].length === 2 ? `19${longMonthMatch[3]}` : longMonthMatch[3]);
+  }
+
+  const leadingMonthMatch = normalized.match(
+    new RegExp(`^(${monthNames})\\s+(\\d{1,2})\\s+(\\d{2,4})$`, 'i'),
+  );
+  if (!year && leadingMonthMatch) {
+    month = parseMonthToken(leadingMonthMatch[1]) ?? 0;
+    day = Number(leadingMonthMatch[2]);
+    year = Number(leadingMonthMatch[3].length === 2 ? `19${leadingMonthMatch[3]}` : leadingMonthMatch[3]);
+  }
+
+  if (!year || !month || !day) {
+    return false;
+  }
+
+  const currentYear = new Date().getFullYear();
+  if (year < 1900 || year > currentYear) {
+    return false;
+  }
+
+  const date = new Date(year, month - 1, day);
+  return (
+    date.getFullYear() === year &&
+    date.getMonth() === month - 1 &&
+    date.getDate() === day
+  );
+};
+
+const preserveEdgeMask = (value: string): string => {
+  const leadingWhitespace = value.match(/^\s*/)?.[0] ?? '';
+  const trailingWhitespace = value.match(/\s*$/)?.[0] ?? '';
+  const coreValue = value.slice(leadingWhitespace.length, value.length - trailingWhitespace.length);
+
+  if (!coreValue) {
+    return value;
+  }
+
+  if (coreValue.length === 1) {
+    return `${leadingWhitespace}*${trailingWhitespace}`;
+  }
+
+  if (coreValue.length === 2) {
+    return `${leadingWhitespace}${coreValue[0]}*${trailingWhitespace}`;
+  }
+
+  const visibleStart = coreValue[0];
+  const visibleEnd = coreValue[coreValue.length - 1];
+  const maskedMiddle = '*'.repeat(coreValue.length - 2);
+
+  return `${leadingWhitespace}${visibleStart}${maskedMiddle}${visibleEnd}${trailingWhitespace}`;
+};
+
 const detectionRules: DetectionRule[] = [
   {
     type: 'apiKey',
-    label: 'API Key',
-    pattern: /\b(?:sk|pk|rk|pat|ghp|ghu|ghs|ghr|xox[baprs]|AIza)[-_A-Za-z0-9]{10,}\b/g,
-    replacementToken: '[API_KEY]',
+    label: 'OpenAI Project Key',
+    pattern: /\bsk-proj-[A-Za-z0-9_-]{12,}\b/g,
+    replacementToken: '[OPENAI_PROJECT_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'OpenAI Secret Key',
+    pattern: /\bsk-[A-Za-z0-9]{20,}\b/g,
+    replacementToken: '[OPENAI_API_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'Anthropic API Key',
+    pattern: /\bsk-ant-(?:api\d{2}-)?[A-Za-z0-9_-]{16,}\b/g,
+    replacementToken: '[ANTHROPIC_API_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'Stripe Secret Key',
+    pattern: /\bsk_(?:live|test)_[A-Za-z0-9]{16,}\b/g,
+    replacementToken: '[STRIPE_SECRET_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'Stripe Publishable Key',
+    pattern: /\bpk_(?:live|test)_[A-Za-z0-9]{16,}\b/g,
+    replacementToken: '[STRIPE_PUBLISHABLE_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'Stripe Restricted Key',
+    pattern: /\brk_(?:live|test)_[A-Za-z0-9]{16,}\b/g,
+    replacementToken: '[STRIPE_RESTRICTED_KEY]',
+  },
+  {
+    type: 'token',
+    label: 'Stripe Webhook Secret',
+    pattern: /\bwhsec_[A-Za-z0-9]{16,}\b/g,
+    replacementToken: '[STRIPE_WEBHOOK_SECRET]',
+  },
+  {
+    type: 'awsKey',
+    label: 'AWS Access Key',
+    pattern: /\b(?:A3T[A-Z0-9]|AKIA|ASIA|AGPA|AIDA|AROA|ANPA)[A-Z0-9]{16}\b/g,
+    replacementToken: '[AWS_ACCESS_KEY]',
+  },
+  {
+    type: 'token',
+    label: 'GitHub Fine-Grained Token',
+    pattern: /\bgithub_pat_[A-Za-z0-9_]{20,}\b/g,
+    replacementToken: '[GITHUB_FINE_GRAINED_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'GitHub Personal Access Token',
+    pattern: /\bghp_[A-Za-z0-9]{20,}\b/g,
+    replacementToken: '[GITHUB_PAT]',
+  },
+  {
+    type: 'token',
+    label: 'GitHub OAuth Token',
+    pattern: /\b(?:gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/g,
+    replacementToken: '[GITHUB_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'Slack Bot Token',
+    pattern: /\bxoxb-[A-Za-z0-9-]{20,}\b/g,
+    replacementToken: '[SLACK_BOT_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'Slack User Token',
+    pattern: /\bxoxp-[A-Za-z0-9-]{20,}\b/g,
+    replacementToken: '[SLACK_USER_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'Slack App Token',
+    pattern: /\bxapp-[A-Za-z0-9-]{20,}\b/g,
+    replacementToken: '[SLACK_APP_TOKEN]',
+  },
+  {
+    type: 'url',
+    label: 'Slack Webhook URL',
+    pattern: /\bhttps:\/\/hooks\.slack(?:-gov)?\.com\/services\/[A-Z0-9]+\/[A-Z0-9]+\/[A-Za-z0-9]+\b/g,
+    replacementToken: '[SLACK_WEBHOOK_URL]',
+  },
+  {
+    type: 'url',
+    label: 'Discord Webhook URL',
+    pattern: /\bhttps:\/\/(?:discord(?:app)?\.com)\/api\/webhooks\/\d+\/[A-Za-z0-9_-]+\b/g,
+    replacementToken: '[DISCORD_WEBHOOK_URL]',
+  },
+  {
+    type: 'apiKey',
+    label: 'Google API Key',
+    pattern: /\bAIza[0-9A-Za-z_-]{20,}\b/g,
+    replacementToken: '[GOOGLE_API_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'SendGrid API Key',
+    pattern: /\bSG\.[A-Za-z0-9_-]{16,}\.[A-Za-z0-9_-]{16,}\b/g,
+    replacementToken: '[SENDGRID_API_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'Mailchimp API Key',
+    pattern: /\b[a-f0-9]{32}-us\d{1,2}\b/gi,
+    replacementToken: '[MAILCHIMP_API_KEY]',
+  },
+  {
+    type: 'apiKey',
+    label: 'Twilio API Key',
+    pattern: /\bSK[0-9a-fA-F]{32}\b/g,
+    replacementToken: '[TWILIO_API_KEY]',
+  },
+  {
+    type: 'token',
+    label: 'Shopify Admin Token',
+    pattern: /\bshpat_[A-Za-z0-9]{16,}\b/g,
+    replacementToken: '[SHOPIFY_ADMIN_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'Square Access Token',
+    pattern: /\bsq0atp-[A-Za-z0-9_-]{16,}\b/g,
+    replacementToken: '[SQUARE_ACCESS_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'DigitalOcean Token',
+    pattern: /\bdop_v1_[A-Za-z0-9_-]{16,}\b/g,
+    replacementToken: '[DIGITALOCEAN_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'Hugging Face Token',
+    pattern: /\bhf_[A-Za-z0-9]{20,}\b/g,
+    replacementToken: '[HUGGINGFACE_TOKEN]',
+  },
+  {
+    type: 'token',
+    label: 'Mapbox Token',
+    pattern: /\b(?:pk|sk)\.[A-Za-z0-9_-]{20,}\b/g,
+    replacementToken: '[MAPBOX_TOKEN]',
+  },
+  {
+    type: 'privateKey',
+    label: 'Private Key',
+    pattern: /-----BEGIN(?:[\sA-Z]+)?PRIVATE KEY-----[\s\S]*?-----END(?:[\sA-Z]+)?PRIVATE KEY-----/g,
+    replacementToken: '[PRIVATE_KEY]',
   },
   {
     type: 'email',
@@ -151,14 +441,75 @@ const detectionRules: DetectionRule[] = [
   {
     type: 'phone',
     label: 'Phone Number',
-    pattern: /\b(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{2,4}\)?[\s.-]?)?\d{3}[\s.-]?\d{4,6}\b/g,
+    pattern: /(?<!\w)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?(?:\d[\s.-]?){6,14}\d\b/g,
     replacementToken: '[PHONE]',
+    validate: isLikelyPhone,
+  },
+  {
+    type: 'dob',
+    label: 'Date of Birth',
+    pattern: new RegExp(
+      `\\b(?:dob|date\\s*of\\s*birth|birthdate)\\s*[:=-]?\\s*(?:\\d{4}[-/.]\\d{1,2}[-/.]\\d{1,2}|\\d{1,2}[-/.]\\d{1,2}[-/.]\\d{2,4}|\\d{1,2}\\s+${monthNames}\\s+\\d{2,4}|${monthNames}\\s+\\d{1,2},?\\s+\\d{2,4})\\b`,
+      'gi',
+    ),
+    replacementToken: '[DATE_OF_BIRTH]',
+    validate: isLikelyDob,
   },
   {
     type: 'url',
     label: 'URL',
     pattern: /\bhttps?:\/\/[^\s/$.?#].[^\s]*\b/gi,
     replacementToken: '[URL]',
+  },
+  {
+    type: 'ipAddress',
+    label: 'IP Address',
+    pattern: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g,
+    replacementToken: '[IP_ADDRESS]',
+  },
+  {
+    type: 'ssn',
+    label: 'SSN',
+    pattern: /\b\d{3}-\d{2}-\d{4}\b/g,
+    replacementToken: '[SSN]',
+  },
+  {
+    type: 'iban',
+    label: 'IBAN',
+    pattern: /\b[A-Z]{2}\d{2}[A-Z0-9]{11,30}\b/g,
+    replacementToken: '[IBAN]',
+    validate: isLikelyIban,
+  },
+  {
+    type: 'banking',
+    label: 'SWIFT / BIC',
+    pattern: /\b[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b/g,
+    replacementToken: '[SWIFT_BIC]',
+  },
+  {
+    type: 'banking',
+    label: 'IFSC Code',
+    pattern: /\b[A-Z]{4}0[A-Z0-9]{6}\b/g,
+    replacementToken: '[IFSC]',
+  },
+  {
+    type: 'banking',
+    label: 'UPI ID',
+    pattern: /\b[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}[a-zA-Z0-9._-]{1,}\b/g,
+    replacementToken: '[UPI_ID]',
+  },
+  {
+    type: 'banking',
+    label: 'Routing Number',
+    pattern: /\b(?:routing|aba)\s*(?:number|no)?\s*[:=-]?\s*\d{9}\b/gi,
+    replacementToken: '[ROUTING_NUMBER]',
+  },
+  {
+    type: 'banking',
+    label: 'Bank Account Number',
+    pattern: /\b(?:account|acct)(?:\s*(?:number|no))?\s*[:=-]?\s*[A-Z0-9]{8,20}\b/gi,
+    replacementToken: '[BANK_ACCOUNT]',
+    validate: hasAtLeastOneDigit,
   },
   {
     type: 'creditCard',
@@ -168,12 +519,48 @@ const detectionRules: DetectionRule[] = [
     validate: isLikelyCreditCard,
   },
   {
+    type: 'creditCard',
+    label: 'Card Expiry',
+    pattern: /\b(?:exp|expiry|expiration)\s*[:=-]?\s*(?:0[1-9]|1[0-2])(?:[/-])(?:\d{2}|\d{4})\b/gi,
+    replacementToken: '[CARD_EXPIRY]',
+  },
+  {
+    type: 'creditCard',
+    label: 'Card Security Code',
+    pattern: /\b(?:cvv|cvc|cvn|security\s*code)\s*[:=-]?\s*\d{3,4}\b/gi,
+    replacementToken: '[CARD_SECURITY_CODE]',
+  },
+  {
     type: 'token',
-    label: 'Access Token',
-    pattern:
-      /\b(?:Bearer\s+[A-Za-z0-9\-._~+/]+=*|eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9._-]+\.[A-Za-z0-9._-]+|(?:token|access_token|refresh_token)[=:][A-Za-z0-9._-]{16,})\b/g,
+    label: 'Bearer Token',
+    pattern: /\bBearer\s+[A-Za-z0-9\-._~+/]+=*\b/g,
+    replacementToken: '[BEARER_TOKEN]',
+    validate: (value) => value.length >= 24,
+  },
+  {
+    type: 'token',
+    label: 'JWT',
+    pattern: /\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9._-]+\.[A-Za-z0-9._-]+\b/g,
+    replacementToken: '[JWT]',
+    validate: (value) => value.split('.').length === 3,
+  },
+  {
+    type: 'token',
+    label: 'Access Token Parameter',
+    pattern: /\b(?:token|access_token|api_token|refresh_token)[=:][A-Za-z0-9._-]{16,}\b/g,
     replacementToken: '[TOKEN]',
-    validate: isLikelyToken,
+  },
+  {
+    type: 'credential',
+    label: 'Password Assignment',
+    pattern: /\b(?:password|passwd|pwd|passphrase|secret)\s*[:=]\s*[^\s"'`;,]{4,}\b/gi,
+    replacementToken: '[PASSWORD]',
+  },
+  {
+    type: 'credential',
+    label: 'Username Assignment',
+    pattern: /\b(?:username|user|login)\s*[:=]\s*[A-Za-z0-9._@-]{3,}\b/gi,
+    replacementToken: '[USERNAME]',
   },
 ];
 
@@ -186,11 +573,14 @@ const createReplacement = (value: string, mode: SanitizeMode, token: string): st
     return token;
   }
 
-  return '*'.repeat(Math.max(8, value.length));
+  return preserveEdgeMask(value);
 };
 
 const createId = (type: DetectedItemType, index: number, value: string): string =>
   `${type}-${index}-${value.slice(0, 12)}`;
+
+const overlaps = (left: PatternMatch, right: PatternMatch): boolean =>
+  left.start < right.end && right.start < left.end;
 
 const sanitizeWithBuiltInRules = (input: string, mode: SanitizeMode): SanitizeResult => {
   if (!input.trim()) {
@@ -201,30 +591,64 @@ const sanitizeWithBuiltInRules = (input: string, mode: SanitizeMode): SanitizeRe
   }
 
   const detectedItems: DetectedItem[] = [];
-  let sanitizedText = input;
+  const selectedMatches: Array<PatternMatch & { type: DetectedItemType; label: string; replacementToken: string }> =
+    [];
 
-  detectionRules.forEach((rule) => {
-    const matches = Array.from(input.matchAll(rule.pattern)).filter((match) => {
-      const value = match[0];
-      return rule.validate ? rule.validate(value) : true;
-    });
+  detectionRules.forEach((rule, ruleIndex) => {
+    rule.pattern.lastIndex = 0;
 
-    matches.forEach((match, index) => {
-      const value = match[0];
+    const matches = Array.from(input.matchAll(rule.pattern))
+      .map((match) => {
+        const value = match[0];
+        const start = match.index ?? -1;
 
-      detectedItems.push({
-        id: createId(rule.type, index, value),
-        type: rule.type,
-        value,
-        label: rule.label,
-      });
-    });
+        return {
+          value,
+          start,
+          end: start + value.length,
+          ruleIndex,
+        };
+      })
+      .filter((match) => match.start >= 0)
+      .filter((match) => (rule.validate ? rule.validate(match.value) : true))
+      .sort((left, right) => left.start - right.start);
 
     matches.forEach((match) => {
-      const value = match[0];
-      sanitizedText = sanitizedText.replace(value, createReplacement(value, mode, rule.replacementToken));
+      const hasOverlap = selectedMatches.some((selected) => overlaps(selected, match));
+      if (hasOverlap) {
+        return;
+      }
+
+      selectedMatches.push({
+        ...match,
+        type: rule.type,
+        label: rule.label,
+        replacementToken: rule.replacementToken,
+      });
     });
   });
+
+  selectedMatches.sort((left, right) => left.start - right.start);
+
+  selectedMatches.forEach((match, index) => {
+    detectedItems.push({
+      id: createId(match.type, index, match.value),
+      type: match.type,
+      value: match.value,
+      label: match.label,
+    });
+  });
+
+  let cursor = 0;
+  let sanitizedText = '';
+
+  selectedMatches.forEach((match) => {
+    sanitizedText += input.slice(cursor, match.start);
+    sanitizedText += createReplacement(match.value, mode, match.replacementToken);
+    cursor = match.end;
+  });
+
+  sanitizedText += input.slice(cursor);
 
   return {
     sanitizedText: sanitizedText.replace(/\n{3,}/g, '\n\n'),
@@ -320,62 +744,72 @@ const sanitizeText = (input: string, settings: ExtensionSettings): SanitizeResul
 };
 
 const getValue = (target: EditableTarget): string => {
-  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-    return target.value;
-  }
-
-  return target.innerText;
+  return target.value;
 };
 
+const inputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
+const textAreaValueSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
+
 const setValue = (target: EditableTarget, value: string) => {
-  if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-    target.value = value;
+  if (target instanceof HTMLInputElement) {
+    inputValueSetter?.call(target, value);
     return;
   }
 
-  target.innerText = value;
+  textAreaValueSetter?.call(target, value);
+};
+
+const dispatchSyntheticInput = (target: EditableTarget) => {
+  target.dispatchEvent(
+    new InputEvent('input', {
+      bubbles: true,
+      composed: true,
+      inputType: 'insertReplacementText',
+      data: null,
+    }),
+  );
+  target.dispatchEvent(new Event('change', { bubbles: true }));
 };
 
 const isTextInput = (target: EventTarget | null): target is HTMLInputElement =>
   target instanceof HTMLInputElement &&
-  INPUT_TYPES.has(target.type.toLowerCase()) &&
+  !EXCLUDED_INPUT_TYPES.has(target.type.toLowerCase()) &&
   !target.readOnly &&
   !target.disabled;
 
 const isTextArea = (target: EventTarget | null): target is HTMLTextAreaElement =>
   target instanceof HTMLTextAreaElement && !target.readOnly && !target.disabled;
 
-const isContentEditable = (target: EventTarget | null): target is HTMLElement =>
-  target instanceof HTMLElement && target.isContentEditable;
-
 const getEditableTarget = (target: EventTarget | null): EditableTarget | null => {
-  if (isTextInput(target) || isTextArea(target) || isContentEditable(target)) {
+  if (isTextInput(target) || isTextArea(target)) {
     return target;
   }
 
   if (target instanceof HTMLElement) {
     const candidate = target.closest(formSelector);
 
-    if (isTextInput(candidate) || isTextArea(candidate) || isContentEditable(candidate)) {
+    if (isTextInput(candidate) || isTextArea(candidate)) {
       return candidate;
     }
+  }
+
+  const activeElement = document.activeElement;
+
+  if (isTextInput(activeElement) || isTextArea(activeElement)) {
+    return activeElement;
   }
 
   return null;
 };
 
-const moveCaretToEnd = (element: HTMLElement) => {
-  const selection = window.getSelection();
+const insertTextAtCursor = (target: EditableTarget, text: string) => {
+  const currentValue = target.value;
+  const selectionStart = target.selectionStart ?? currentValue.length;
+  const selectionEnd = target.selectionEnd ?? selectionStart;
 
-  if (!selection) {
-    return;
-  }
-
-  const range = document.createRange();
-  range.selectNodeContents(element);
-  range.collapse(false);
-  selection.removeAllRanges();
-  selection.addRange(range);
+  target.setRangeText(text, selectionStart, selectionEnd, 'end');
+  const nextCaretPosition = selectionStart + text.length;
+  target.setSelectionRange(nextCaretPosition, nextCaretPosition);
 };
 
 const updateSelectionForInput = (
@@ -412,19 +846,40 @@ const sanitizeEditableTarget = (target: EditableTarget) => {
   try {
     setValue(target, sanitizedText);
 
-    if (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) {
-      updateSelectionForInput(target, originalValue, sanitizedText);
-    } else {
-      moveCaretToEnd(target);
-    }
+    updateSelectionForInput(target, originalValue, sanitizedText);
 
-    target.dispatchEvent(new Event('input', { bubbles: true }));
-    target.dispatchEvent(new Event('change', { bubbles: true }));
+    dispatchSyntheticInput(target);
   } finally {
     window.setTimeout(() => {
       processingTargets.delete(target);
     }, 0);
   }
+};
+
+const scheduleSanitizeEditableTarget = (target: EditableTarget) => {
+  sanitizeEditableTarget(target);
+  window.requestAnimationFrame(() => sanitizeEditableTarget(target));
+  window.setTimeout(() => sanitizeEditableTarget(target), 24);
+};
+
+const dispatchPasteInput = (target: EditableTarget, text: string) => {
+  target.dispatchEvent(
+    new InputEvent('input', {
+      bubbles: true,
+      composed: true,
+      inputType: 'insertFromPaste',
+      data: text,
+    }),
+  );
+  target.dispatchEvent(new Event('change', { bubbles: true }));
+};
+
+const syncActiveTarget = () => {
+  if (!activeEditableTarget || !activeEditableTarget.isConnected || !currentSettings.enabled) {
+    return;
+  }
+
+  sanitizeEditableTarget(activeEditableTarget);
 };
 
 const shouldSanitizeOnInput = (event: Event): boolean => {
@@ -440,11 +895,7 @@ const shouldSanitizeOnInput = (event: Event): boolean => {
     return false;
   }
 
-  if (!event.data) {
-    return false;
-  }
-
-  return /[\s,.;:!?)}\]]/.test(event.data);
+  return Boolean(event.data);
 };
 
 const getSensitiveItems = (value: string): DetectedItem[] => sanitizeText(value, currentSettings).detectedItems;
@@ -743,8 +1194,18 @@ if (typeof chrome !== 'undefined' && chrome.storage?.onChanged) {
       customDictionary: nextValue?.customDictionary ?? defaultSettings.customDictionary,
       customPatterns: nextValue?.customPatterns ?? defaultSettings.customPatterns,
     };
+
+    syncActiveTarget();
   });
 }
+
+document.addEventListener(
+  'focusin',
+  (event) => {
+    activeEditableTarget = getEditableTarget(event.target);
+  },
+  true,
+);
 
 document.addEventListener(
   'input',
@@ -759,7 +1220,8 @@ document.addEventListener(
       return;
     }
 
-    sanitizeEditableTarget(target);
+    activeEditableTarget = target;
+    scheduleSanitizeEditableTarget(target);
   },
   true,
 );
@@ -777,6 +1239,7 @@ document.addEventListener(
       return;
     }
 
+    activeEditableTarget = target;
     sanitizeEditableTarget(target);
   },
   true,
@@ -795,7 +1258,27 @@ document.addEventListener(
       return;
     }
 
+    activeEditableTarget = target;
     sanitizeEditableTarget(target);
+  },
+  true,
+);
+
+document.addEventListener(
+  'beforeinput',
+  (event) => {
+    if (!currentSettings.enabled || !(event instanceof InputEvent) || event.inputType !== 'insertFromPaste') {
+      return;
+    }
+
+    const target = getEditableTarget(event.target);
+
+    if (!target) {
+      return;
+    }
+
+    activeEditableTarget = target;
+    window.requestAnimationFrame(() => scheduleSanitizeEditableTarget(target));
   },
   true,
 );
@@ -813,7 +1296,23 @@ document.addEventListener(
       return;
     }
 
-    window.setTimeout(() => sanitizeEditableTarget(target), 0);
+    activeEditableTarget = target;
+    const clipboardText = event instanceof ClipboardEvent ? event.clipboardData?.getData('text/plain') ?? '' : '';
+
+    if (clipboardText) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      const { sanitizedText, detectedItems } = sanitizeText(clipboardText, currentSettings);
+
+      incrementProtectionStats(currentSettings.mode, detectedItems.length);
+      insertTextAtCursor(target, sanitizedText);
+      dispatchPasteInput(target, sanitizedText);
+      scheduleSanitizeEditableTarget(target);
+      return;
+    }
+
+    scheduleSanitizeEditableTarget(target);
   },
   true,
 );

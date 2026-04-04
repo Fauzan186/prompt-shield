@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/Button';
+import { BuiltInPatternsPanel } from '@/components/BuiltInPatternsPanel';
+import { BUILT_IN_PATTERN_COUNT } from '@/features/prompt/builtInPatterns';
 import type { SanitizeMode } from '@/types/prompt';
 
 interface ExtensionSettings {
@@ -98,7 +100,6 @@ export const ExtensionPopupApp = () => {
   const [ruleDraft, setRuleDraft] = useState('');
   const [hasLoadedSettings, setHasLoadedSettings] = useState(false);
 
-  const builtInPatternCount = 6;
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
@@ -237,7 +238,7 @@ export const ExtensionPopupApp = () => {
             <div className="mt-4 grid grid-cols-3 gap-2">
               <div className="rounded-[1.2rem] bg-white/[0.04] px-3 py-2.5">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Built-in</div>
-                <div className="mt-1 text-base font-semibold text-white">{builtInPatternCount}</div>
+                <div className="mt-1 text-base font-semibold text-white">{BUILT_IN_PATTERN_COUNT}</div>
               </div>
               <div className="rounded-[1.2rem] bg-white/[0.04] px-3 py-2.5">
                 <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Protected</div>
@@ -438,6 +439,8 @@ export const ExtensionPopupApp = () => {
               </div>
             </div>
           </section>
+
+          <BuiltInPatternsPanel compact />
 
           <footer className="rounded-[1.3rem] border border-white/8 bg-slate-950/55 px-4 py-2.5 text-center text-[11px] leading-4.5 text-slate-500">
             <div>

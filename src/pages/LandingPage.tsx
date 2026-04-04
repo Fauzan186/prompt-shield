@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { SectionCard } from '@/components/SectionCard';
+import { BUILT_IN_PATTERN_COUNT } from '@/features/prompt/builtInPatterns';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
 import { useDocumentMetadata } from '@/hooks/useDocumentMetadata';
@@ -11,7 +12,7 @@ const landingDescription =
   'PromptShield is an AI prompt sanitizer that helps teams remove API keys, tokens, emails, phone numbers, URLs, and credit card numbers before prompts are shared.';
 
 const heroStats = [
-  { value: '6+', label: 'Sensitive patterns' },
+  { value: `${BUILT_IN_PATTERN_COUNT}+`, label: 'Sensitive patterns' },
   { value: '3', label: 'Sanitization modes' },
   { value: '100%', label: 'Browser-based flow' },
 ];

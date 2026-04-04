@@ -1,4 +1,5 @@
 import { AnimatedBackground } from '@/components/AnimatedBackground';
+import { BuiltInPatternsPanel } from '@/components/BuiltInPatternsPanel';
 import { DetectedItemsList } from '@/components/DetectedItemsList';
 import { ModeToggle } from '@/components/ModeToggle';
 import { PromptForm } from '@/components/PromptForm';
@@ -122,6 +123,8 @@ export const AppPage = () => {
             >
               <DetectedItemsList />
             </SectionCard>
+
+            <BuiltInPatternsPanel />
           </div>
         </div>
       </div>
