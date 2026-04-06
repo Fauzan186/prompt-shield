@@ -25,14 +25,14 @@ export const SiteHeader = ({ showAppCta = true, compact = false }: SiteHeaderPro
             <a href="/#faq" className="text-slate-400 transition hover:text-white">
               FAQ
             </a>
-            <NavLink to="/app" className={navLinkClass}>
+            <NavLink to="/prompt-sanitizer" className={navLinkClass}>
               Tool
             </NavLink>
           </nav>
 
           {showAppCta ? (
             <Link
-              to="/app"
+              to="/prompt-sanitizer"
               className="inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-4 py-2 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
             >
               Open Tool

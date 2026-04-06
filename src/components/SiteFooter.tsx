@@ -11,7 +11,7 @@ export const SiteFooter = () => {
             <Link to="/" className="transition hover:text-white">
               Home
             </Link>
-            <Link to="/app" className="transition hover:text-white">
+            <Link to="/prompt-sanitizer" className="transition hover:text-white">
               Tool
             </Link>
             <a href="/#features" className="transition hover:text-white">
