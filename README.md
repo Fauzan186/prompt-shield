@@ -1,159 +1,187 @@
-# 🛡️ PromptShield
+# PromptShield
 
-**Don’t leak secrets to AI.**
-Protect your prompts before sending them to AI tools like ChatGPT, Gemini, or Claude.
+Privacy-first prompt protection for modern AI workflows.
 
----
+PromptShield helps detect and sanitize sensitive data before it is shared through AI tools, browser inputs, support workflows, and web forms. It is available as both a web app and a Chrome extension, with all detection and sanitization running locally in the browser.
 
-## 🚀 What is PromptShield?
+## Product Highlights
 
-PromptShield is a **privacy-first web app** that detects and sanitizes sensitive data in your prompts — such as API keys, emails, phone numbers, and secrets — before you share them with AI tools.
+- Browser-first privacy with no prompt scanning backend
+- Chrome extension for live input and paste sanitization
+- Web app for manual prompt review and cleanup
+- Three sanitization modes: `Mask`, `Remove`, and `Replace`
+- Built-in detection for keys, tokens, credentials, URLs, finance-related values, and common PII
+- Custom dictionary and custom regex rules
 
-✅ Runs 100% in your browser
-✅ No data storage
-✅ No API calls
-✅ Fully secure & transparent
+## Live Product
 
----
+- Website: [https://promptshield.in](https://promptshield.in)
+- Privacy Policy: [https://promptshield.in/privacy](https://promptshield.in/privacy)
+- Contact: [https://promptshield.in/contact](https://promptshield.in/contact)
 
-## ✨ Features
+## What PromptShield Detects
 
-* 🔍 **Sensitive Data Detection**
+PromptShield ships with **47 built-in patterns** across:
 
-  * API keys (sk-...)
-  * Emails
-  * Phone numbers
-  * URLs
-  * IP addresses
+- API keys
+- Access tokens and webhooks
+- Emails and phone numbers
+- URLs and IP addresses
+- Credit-card and banking-related values
+- Password and credential-style assignments
+- Date of birth, SSN, IBAN, and similar structured values
 
-* 🔐 **Sanitization Modes**
+PromptShield also supports:
 
-  * Mask → `********`
-  * Replace → `[API_KEY]`
-  * Remove → delete completely
+- Custom dictionary terms
+- Custom regex rules
 
-* ⚙️ **Custom Rules**
+## Sanitization Modes
 
-  * Define your own find & replace patterns
+### `Mask`
+Best default for safety and readability.
 
-* 📋 **One-Click Copy**
+Example:
 
-  * Copy sanitized prompt instantly
+```text
+finance@company.com -> f*****************m
+```
 
-* 🎯 **Real-time Processing**
+### `Remove`
+Deletes the detected value entirely.
 
-  * Fast and efficient (client-side only)
+Example:
 
----
+```text
+API key: sk-123... -> API key:
+```
 
-## 🧱 Tech Stack
+### `Replace`
+Swaps detected values for placeholders.
 
-* ⚛️ React (Vite + TypeScript)
-* 🎨 Tailwind CSS
-* 🧠 Redux Toolkit
-* 💾 LocalStorage (for custom rules)
+PromptShield uses safer generic placeholders for ambiguous patterns and more specific placeholders for strong matches.
 
----
+Examples:
 
-## 📦 Installation
+```text
+sk-proj-... -> [OPENAI_PROJECT_KEY]
+john@company.com -> [SENSITIVE_CONTACT]
+4242 4242 4242 4242 -> [CREDIT_CARD]
+```
+
+## Chrome Extension Features
+
+- Enable or disable protection
+- Live sanitization while typing
+- Instant paste sanitization
+- Optional accidental-send review
+- Custom rule management in the popup
+- Built-in pattern viewer
+- Local settings and local usage stats
+
+## Web App Features
+
+- Paste prompt content into a dedicated workspace
+- Scan and sanitize manually
+- Review detected items
+- Copy cleaned output
+- View built-in pattern coverage
+
+## Privacy
+
+PromptShield is designed to keep prompt handling local.
+
+- No backend prompt processing
+- No remote code
+- No prompt content sent to external servers for scanning
+- Local browser storage only for settings and extension preferences
+
+## Tech Stack
+
+- React
+- Vite
+- TypeScript
+- Tailwind CSS
+- Redux Toolkit
+- Chrome Extension Manifest V3
+
+## Getting Started
+
+### Install dependencies
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/prompt-shield.git
-cd prompt-shield
 npm install
+```
+
+### Start the web app
+
+```bash
 npm run dev
 ```
 
----
+### Build the project
 
-## ⚙️ Environment Variables
+```bash
+npm run build
+```
 
-Create a `.env` file in the root:
+## Environment Variables
+
+Create a `.env` file in the project root:
 
 ```env
 VITE_APP_NAME=PromptShield
-VITE_APP_TITLE=Protect your prompts before AI sees them
+VITE_APP_TITLE=PromptShield | AI Prompt Sanitizer
 ```
 
----
+## Project Structure
 
-## 🧭 Project Structure
-
-```
+```text
 src/
-├── app/                # Redux store
-├── features/           # Feature modules (prompt logic)
-├── components/         # UI components
-├── pages/              # Pages (Home, etc.)
-├── hooks/              # Custom hooks
-├── types/              # Type definitions
+├── app/                     # Redux store setup
+├── components/              # Shared UI components
+├── extension/               # Chrome extension popup and content script
+├── features/prompt/         # Prompt logic, built-in patterns, sanitization
+├── hooks/                   # Reusable hooks
+├── pages/                   # Landing, app, privacy, terms, contact
+├── types/                   # Shared TypeScript types
 ├── App.tsx
 ├── main.tsx
 └── index.css
 ```
 
----
+## Loading the Chrome Extension
 
-## 🔐 Privacy First
+After building:
 
-PromptShield is built with privacy as the top priority:
-
-* ❌ No backend
-* ❌ No tracking
-* ❌ No data collection
-* ✅ Everything runs locally in your browser
-
----
-
-## 🧪 Example
-
-**Input:**
-
-```
-My API key is sk-1234567890abcdef and email is test@gmail.com
+```bash
+npm run build
 ```
 
-**Output (Replace Mode):**
+Then:
 
-```
-My API key is [API_KEY] and email is [EMAIL]
-```
+1. Open `chrome://extensions`
+2. Enable `Developer mode`
+3. Click `Load unpacked`
+4. Select the `dist` folder
 
----
+## Recommended QA Checklist
 
-## 🗺️ Roadmap
+- Test `Mask`, `Remove`, and `Replace` in the web app
+- Test paste sanitization in a normal `input`
+- Test paste sanitization in a normal `textarea`
+- Test live sanitization in ChatGPT
+- Test custom dictionary rules
+- Test custom regex rules
+- Test the extension popup reset flow
+- Test accidental-send review if enabled
 
-* [ ] Chrome Extension (auto-detect on AI tools)
-* [ ] Advanced detection (AI-based)
-* [ ] Highlight sensitive data in UI
-* [ ] Export / download sanitized prompt
-* [ ] Team / enterprise features
+## Product Notes
 
----
+- `Mask` is the safest default mode
+- `Replace` is designed to stay readable while avoiding misleading labels on ambiguous patterns
+- Detection is best-effort and should be treated as a protection layer, not a legal or compliance guarantee
 
-## 🤝 Contributing
+## License
 
-Contributions are welcome!
-
-1. Fork the repo
-2. Create your feature branch
-3. Commit your changes
-4. Open a Pull Request
-
----
-
-## 📄 License
-
-MIT License
-
----
-
-## ⭐ Support
-
-If you like this project, give it a star ⭐ and share it with others!
-
----
-
-## 💡 Tagline
-
-> Clean your prompts before AI sees them.
+MIT
