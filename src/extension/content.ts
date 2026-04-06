@@ -34,6 +34,7 @@ interface DetectionRule {
   label: string;
   pattern: RegExp;
   replacementToken: string;
+  replaceFallbackToken?: string;
   validate?: (value: string) => boolean;
 }
 
@@ -60,10 +61,20 @@ interface ExtensionStats {
   modeUsage: Record<SanitizeMode, number>;
 }
 
-type EditableTarget = HTMLInputElement | HTMLTextAreaElement;
+type EditableTarget = HTMLInputElement | HTMLTextAreaElement | HTMLElement;
 
 const STORAGE_KEY = 'promptshield_settings';
 const STATS_KEY = 'promptshield_stats';
+const AI_EDITOR_HOSTS = [
+  'chatgpt.com',
+  'chat.openai.com',
+  'claude.ai',
+  'gemini.google.com',
+  'copilot.microsoft.com',
+  'perplexity.ai',
+  'www.perplexity.ai',
+];
+const CHATGPT_TEXTAREA_SELECTOR = 'textarea[name="prompt-textarea"]';
 const EXCLUDED_INPUT_TYPES = new Set([
   'button',
   'checkbox',
@@ -82,11 +93,12 @@ const EXCLUDED_INPUT_TYPES = new Set([
   'week',
 ]);
 const processingTargets = new WeakSet<EventTarget>();
-const formSelector = 'input, textarea';
+const formSelector =
+  'input, textarea, [contenteditable="true"], [contenteditable="plaintext-only"], [role="textbox"][contenteditable="true"]';
 
 const defaultSettings: ExtensionSettings = {
   enabled: true,
-  mode: 'replace',
+  mode: 'mask',
   blockSubmissionEnabled: false,
   customDictionaryEnabled: false,
   customPatternsEnabled: false,
@@ -97,6 +109,7 @@ const defaultSettings: ExtensionSettings = {
 let currentSettings: ExtensionSettings = { ...defaultSettings };
 let toastTimeout = 0;
 let activeEditableTarget: EditableTarget | null = null;
+let pendingPasteText: string | null = null;
 const reviewBypassTargets = new WeakMap<EventTarget, number>();
 const reviewBypassForms = new WeakMap<HTMLFormElement, number>();
 
@@ -437,13 +450,7 @@ const detectionRules: DetectionRule[] = [
     label: 'Email',
     pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
     replacementToken: '[EMAIL]',
-  },
-  {
-    type: 'phone',
-    label: 'Phone Number',
-    pattern: /(?<!\w)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?(?:\d[\s.-]?){6,14}\d\b/g,
-    replacementToken: '[PHONE]',
-    validate: isLikelyPhone,
+    replaceFallbackToken: '[SENSITIVE_CONTACT]',
   },
   {
     type: 'dob',
@@ -453,6 +460,7 @@ const detectionRules: DetectionRule[] = [
       'gi',
     ),
     replacementToken: '[DATE_OF_BIRTH]',
+    replaceFallbackToken: '[SENSITIVE_DATE]',
     validate: isLikelyDob,
   },
   {
@@ -460,6 +468,7 @@ const detectionRules: DetectionRule[] = [
     label: 'URL',
     pattern: /\bhttps?:\/\/[^\s/$.?#].[^\s]*\b/gi,
     replacementToken: '[URL]',
+    replaceFallbackToken: '[SENSITIVE_URL]',
   },
   {
     type: 'ipAddress',
@@ -485,6 +494,7 @@ const detectionRules: DetectionRule[] = [
     label: 'SWIFT / BIC',
     pattern: /\b[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b/g,
     replacementToken: '[SWIFT_BIC]',
+    replaceFallbackToken: '[SENSITIVE_CODE]',
   },
   {
     type: 'banking',
@@ -497,19 +507,30 @@ const detectionRules: DetectionRule[] = [
     label: 'UPI ID',
     pattern: /\b[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}[a-zA-Z0-9._-]{1,}\b/g,
     replacementToken: '[UPI_ID]',
+    replaceFallbackToken: '[SENSITIVE_ID]',
   },
   {
     type: 'banking',
     label: 'Routing Number',
     pattern: /\b(?:routing|aba)\s*(?:number|no)?\s*[:=-]?\s*\d{9}\b/gi,
     replacementToken: '[ROUTING_NUMBER]',
+    replaceFallbackToken: '[SENSITIVE_BANKING]',
   },
   {
     type: 'banking',
     label: 'Bank Account Number',
     pattern: /\b(?:account|acct)(?:\s*(?:number|no))?\s*[:=-]?\s*[A-Z0-9]{8,20}\b/gi,
     replacementToken: '[BANK_ACCOUNT]',
+    replaceFallbackToken: '[SENSITIVE_BANKING]',
     validate: hasAtLeastOneDigit,
+  },
+  {
+    type: 'phone',
+    label: 'Phone Number',
+    pattern: /(?<!\w)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?(?:\d[\s.-]?){6,14}\d\b/g,
+    replacementToken: '[PHONE]',
+    replaceFallbackToken: '[SENSITIVE_NUMBER]',
+    validate: isLikelyPhone,
   },
   {
     type: 'creditCard',
@@ -549,11 +570,12 @@ const detectionRules: DetectionRule[] = [
     label: 'Access Token Parameter',
     pattern: /\b(?:token|access_token|api_token|refresh_token)[=:][A-Za-z0-9._-]{16,}\b/g,
     replacementToken: '[TOKEN]',
+    replaceFallbackToken: '[SENSITIVE_VALUE]',
   },
   {
     type: 'credential',
     label: 'Password Assignment',
-    pattern: /\b(?:password|passwd|pwd|passphrase|secret)\s*[:=]\s*[^\s"'`;,]{4,}\b/gi,
+    pattern: /\b(?:password|passwd|pwd|passphrase)\s*[:=]\s*[^\s"'`;,]{4,}\b/gi,
     replacementToken: '[PASSWORD]',
   },
   {
@@ -561,16 +583,22 @@ const detectionRules: DetectionRule[] = [
     label: 'Username Assignment',
     pattern: /\b(?:username|user|login)\s*[:=]\s*[A-Za-z0-9._@-]{3,}\b/gi,
     replacementToken: '[USERNAME]',
+    replaceFallbackToken: '[SENSITIVE_VALUE]',
   },
 ];
 
-const createReplacement = (value: string, mode: SanitizeMode, token: string): string => {
+const createReplacement = (
+  value: string,
+  mode: SanitizeMode,
+  token: string,
+  replaceFallbackToken?: string,
+): string => {
   if (mode === 'remove') {
     return '';
   }
 
   if (mode === 'replace') {
-    return token;
+    return replaceFallbackToken ?? token;
   }
 
   return preserveEdgeMask(value);
@@ -591,8 +619,14 @@ const sanitizeWithBuiltInRules = (input: string, mode: SanitizeMode): SanitizeRe
   }
 
   const detectedItems: DetectedItem[] = [];
-  const selectedMatches: Array<PatternMatch & { type: DetectedItemType; label: string; replacementToken: string }> =
-    [];
+  const selectedMatches: Array<
+    PatternMatch & {
+      type: DetectedItemType;
+      label: string;
+      replacementToken: string;
+      replaceFallbackToken?: string;
+    }
+  > = [];
 
   detectionRules.forEach((rule, ruleIndex) => {
     rule.pattern.lastIndex = 0;
@@ -624,6 +658,7 @@ const sanitizeWithBuiltInRules = (input: string, mode: SanitizeMode): SanitizeRe
         type: rule.type,
         label: rule.label,
         replacementToken: rule.replacementToken,
+        replaceFallbackToken: rule.replaceFallbackToken,
       });
     });
   });
@@ -644,7 +679,7 @@ const sanitizeWithBuiltInRules = (input: string, mode: SanitizeMode): SanitizeRe
 
   selectedMatches.forEach((match) => {
     sanitizedText += input.slice(cursor, match.start);
-    sanitizedText += createReplacement(match.value, mode, match.replacementToken);
+    sanitizedText += createReplacement(match.value, mode, match.replacementToken, match.replaceFallbackToken);
     cursor = match.end;
   });
 
@@ -743,9 +778,22 @@ const sanitizeText = (input: string, settings: ExtensionSettings): SanitizeResul
   };
 };
 
-const getValue = (target: EditableTarget): string => {
-  return target.value;
+const isAiEditorHost = (): boolean =>
+  AI_EDITOR_HOSTS.some((host) => location.hostname === host || location.hostname.endsWith(`.${host}`));
+
+const getPreferredChatGptTextarea = (): HTMLTextAreaElement | null => {
+  if (!/^(chatgpt\.com|chat\.openai\.com)$/i.test(location.hostname)) {
+    return null;
+  }
+
+  const textarea = document.querySelector(CHATGPT_TEXTAREA_SELECTOR);
+  return textarea instanceof HTMLTextAreaElement ? textarea : null;
 };
+
+const getValue = (target: EditableTarget): string =>
+  target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement
+    ? target.value
+    : target.innerText;
 
 const inputValueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
 const textAreaValueSetter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value')?.set;
@@ -756,7 +804,12 @@ const setValue = (target: EditableTarget, value: string) => {
     return;
   }
 
-  textAreaValueSetter?.call(target, value);
+  if (target instanceof HTMLTextAreaElement) {
+    textAreaValueSetter?.call(target, value);
+    return;
+  }
+
+  target.textContent = value;
 };
 
 const dispatchSyntheticInput = (target: EditableTarget) => {
@@ -780,29 +833,73 @@ const isTextInput = (target: EventTarget | null): target is HTMLInputElement =>
 const isTextArea = (target: EventTarget | null): target is HTMLTextAreaElement =>
   target instanceof HTMLTextAreaElement && !target.readOnly && !target.disabled;
 
+const isSupportedContentEditable = (target: EventTarget | null): target is HTMLElement =>
+  isAiEditorHost() &&
+  target instanceof HTMLElement &&
+  target.isContentEditable &&
+  target.getAttribute('contenteditable') !== 'false';
+
 const getEditableTarget = (target: EventTarget | null): EditableTarget | null => {
-  if (isTextInput(target) || isTextArea(target)) {
+  if (isTextInput(target) || isTextArea(target) || isSupportedContentEditable(target)) {
     return target;
   }
 
   if (target instanceof HTMLElement) {
     const candidate = target.closest(formSelector);
 
-    if (isTextInput(candidate) || isTextArea(candidate)) {
+    if (isTextInput(candidate) || isTextArea(candidate) || isSupportedContentEditable(candidate)) {
       return candidate;
     }
   }
 
   const activeElement = document.activeElement;
 
-  if (isTextInput(activeElement) || isTextArea(activeElement)) {
+  if (isTextInput(activeElement) || isTextArea(activeElement) || isSupportedContentEditable(activeElement)) {
     return activeElement;
+  }
+
+  const preferredChatGptTextarea = getPreferredChatGptTextarea();
+
+  if (preferredChatGptTextarea) {
+    return preferredChatGptTextarea;
   }
 
   return null;
 };
 
+const moveCaretToEnd = (element: HTMLElement) => {
+  const selection = window.getSelection();
+
+  if (!selection) {
+    return;
+  }
+
+  const range = document.createRange();
+  range.selectNodeContents(element);
+  range.collapse(false);
+  selection.removeAllRanges();
+  selection.addRange(range);
+};
+
 const insertTextAtCursor = (target: EditableTarget, text: string) => {
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    const selection = window.getSelection();
+
+    if (!selection || selection.rangeCount === 0) {
+      target.textContent = `${target.textContent ?? ''}${text}`;
+      moveCaretToEnd(target);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    range.deleteContents();
+    range.insertNode(document.createTextNode(text));
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return;
+  }
+
   const currentValue = target.value;
   const selectionStart = target.selectionStart ?? currentValue.length;
   const selectionEnd = target.selectionEnd ?? selectionStart;
@@ -813,10 +910,15 @@ const insertTextAtCursor = (target: EditableTarget, text: string) => {
 };
 
 const updateSelectionForInput = (
-  target: HTMLInputElement | HTMLTextAreaElement,
+  target: EditableTarget,
   originalValue: string,
   nextValue: string,
 ) => {
+  if (!(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement)) {
+    moveCaretToEnd(target);
+    return;
+  }
+
   const currentStart = target.selectionStart ?? originalValue.length;
   const delta = nextValue.length - originalValue.length;
   const nextPosition = Math.max(0, Math.min(nextValue.length, currentStart + delta));
@@ -872,6 +974,14 @@ const dispatchPasteInput = (target: EditableTarget, text: string) => {
     }),
   );
   target.dispatchEvent(new Event('change', { bubbles: true }));
+};
+
+const applySanitizedPaste = (target: EditableTarget, rawText: string) => {
+  const { sanitizedText, detectedItems } = sanitizeText(rawText, currentSettings);
+  incrementProtectionStats(currentSettings.mode, detectedItems.length);
+  insertTextAtCursor(target, sanitizedText);
+  dispatchPasteInput(target, sanitizedText);
+  scheduleSanitizeEditableTarget(target);
 };
 
 const syncActiveTarget = () => {
@@ -1278,7 +1388,19 @@ document.addEventListener(
     }
 
     activeEditableTarget = target;
-    window.requestAnimationFrame(() => scheduleSanitizeEditableTarget(target));
+    const inputEvent = event as InputEvent & { dataTransfer?: DataTransfer | null };
+    const pastedText = pendingPasteText ?? inputEvent.dataTransfer?.getData('text/plain') ?? '';
+
+    if (!pastedText) {
+      window.requestAnimationFrame(() => scheduleSanitizeEditableTarget(target));
+      return;
+    }
+
+    pendingPasteText = null;
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    applySanitizedPaste(target, pastedText);
   },
   true,
 );
@@ -1300,15 +1422,19 @@ document.addEventListener(
     const clipboardText = event instanceof ClipboardEvent ? event.clipboardData?.getData('text/plain') ?? '' : '';
 
     if (clipboardText) {
+      pendingPasteText = clipboardText;
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();
-      const { sanitizedText, detectedItems } = sanitizeText(clipboardText, currentSettings);
+      window.setTimeout(() => {
+        if (!pendingPasteText) {
+          return;
+        }
 
-      incrementProtectionStats(currentSettings.mode, detectedItems.length);
-      insertTextAtCursor(target, sanitizedText);
-      dispatchPasteInput(target, sanitizedText);
-      scheduleSanitizeEditableTarget(target);
+        const fallbackPasteText = pendingPasteText;
+        pendingPasteText = null;
+        applySanitizedPaste(target, fallbackPasteText);
+      }, 0);
       return;
     }
 

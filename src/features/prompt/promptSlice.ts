@@ -13,7 +13,7 @@ const initialState: PromptState = {
   inputText: '',
   sanitizedText: '',
   detectedItems: [],
-  mode: 'replace',
+  mode: 'mask',
 };
 
 const promptSlice = createSlice({

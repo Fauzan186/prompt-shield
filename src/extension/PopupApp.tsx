@@ -36,7 +36,7 @@ const STATS_KEY = 'promptshield_stats';
 
 const defaultSettings: ExtensionSettings = {
   enabled: true,
-  mode: 'replace',
+  mode: 'mask',
   blockSubmissionEnabled: false,
   customDictionaryEnabled: false,
   customPatternsEnabled: false,
@@ -52,8 +52,8 @@ const defaultStats: ExtensionStats = {
 
 const modeOptions: Array<{ label: string; value: SanitizeMode }> = [
   { label: 'Mask', value: 'mask' },
-  { label: 'Replace', value: 'replace' },
   { label: 'Remove', value: 'remove' },
+  { label: 'Replace', value: 'replace' },
 ];
 
 const SettingToggle = ({ label, description, checked, onChange, compact = false }: SettingToggleProps) => (
@@ -287,10 +287,10 @@ export const ExtensionPopupApp = () => {
                   Mask <span className="ml-1 font-semibold text-white">{stats.modeUsage.mask}</span>
                 </div>
                 <div className="rounded-full bg-white/[0.04] px-3 py-2 text-[11px] text-slate-400">
-                  Replace <span className="ml-1 font-semibold text-white">{stats.modeUsage.replace}</span>
+                  Remove <span className="ml-1 font-semibold text-white">{stats.modeUsage.remove}</span>
                 </div>
                 <div className="rounded-full bg-white/[0.04] px-3 py-2 text-[11px] text-slate-400">
-                  Remove <span className="ml-1 font-semibold text-white">{stats.modeUsage.remove}</span>
+                  Replace <span className="ml-1 font-semibold text-white">{stats.modeUsage.replace}</span>
                 </div>
               </div>
             </div>

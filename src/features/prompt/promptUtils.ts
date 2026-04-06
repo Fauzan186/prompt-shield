@@ -32,13 +32,18 @@ const preserveEdgeMask = (value: string): string => {
   return `${leadingWhitespace}${visibleStart}${maskedMiddle}${visibleEnd}${trailingWhitespace}`;
 };
 
-const createReplacement = (value: string, mode: SanitizeMode, token: string): string => {
+const createReplacement = (
+  value: string,
+  mode: SanitizeMode,
+  token: string,
+  replaceFallbackToken?: string,
+): string => {
   if (mode === 'remove') {
     return '';
   }
 
   if (mode === 'replace') {
-    return token;
+    return replaceFallbackToken ?? token;
   }
 
   return preserveEdgeMask(value);
@@ -59,8 +64,14 @@ export const sanitizePrompt = (input: string, mode: SanitizeMode): SanitizeResul
   }
 
   const detectedItems: DetectedItem[] = [];
-  const selectedMatches: Array<PatternMatch & { type: DetectedItemType; label: string; replacementToken: string }> =
-    [];
+  const selectedMatches: Array<
+    PatternMatch & {
+      type: DetectedItemType;
+      label: string;
+      replacementToken: string;
+      replaceFallbackToken?: string;
+    }
+  > = [];
 
   builtInPatterns.forEach((rule, ruleIndex) => {
     rule.pattern.lastIndex = 0;
@@ -92,6 +103,7 @@ export const sanitizePrompt = (input: string, mode: SanitizeMode): SanitizeResul
         type: rule.type,
         label: rule.label,
         replacementToken: rule.replacementToken,
+        replaceFallbackToken: rule.replaceFallbackToken,
       });
     });
   });
@@ -112,7 +124,7 @@ export const sanitizePrompt = (input: string, mode: SanitizeMode): SanitizeResul
 
   selectedMatches.forEach((match) => {
     sanitizedText += input.slice(cursor, match.start);
-    sanitizedText += createReplacement(match.value, mode, match.replacementToken);
+    sanitizedText += createReplacement(match.value, mode, match.replacementToken, match.replaceFallbackToken);
     cursor = match.end;
   });
 

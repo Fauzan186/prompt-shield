@@ -8,8 +8,8 @@ const modeOptions: Array<{
   description: string;
 }> = [
   { value: 'mask', label: 'Mask', description: 'Hide values with asterisks.' },
-  { value: 'replace', label: 'Replace', description: 'Swap values for typed labels.' },
   { value: 'remove', label: 'Remove', description: 'Delete sensitive values entirely.' },
+  { value: 'replace', label: 'Replace', description: 'Use clear placeholders for detected values.' },
 ];
 
 export const ModeToggle = () => {

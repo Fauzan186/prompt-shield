@@ -8,6 +8,7 @@ export interface BuiltInPatternDefinition {
   example: string;
   pattern: RegExp;
   replacementToken: string;
+  replaceFallbackToken?: string;
   validate?: (value: string) => boolean;
 }
 
@@ -382,6 +383,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'access_token=...',
     pattern: /\b(?:token|access_token|api_token|refresh_token)[=:][A-Za-z0-9._-]{16,}\b/g,
     replacementToken: '[TOKEN]',
+    replaceFallbackToken: '[SENSITIVE_VALUE]',
   },
   {
     id: 'email',
@@ -391,16 +393,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'team@company.com',
     pattern: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
     replacementToken: '[EMAIL]',
-  },
-  {
-    id: 'phone',
-    type: 'phone',
-    label: 'Phone Number',
-    category: 'PII & Finance',
-    example: '+1 555 0199',
-    pattern: /(?<!\w)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?(?:\d[\s.-]?){6,14}\d\b/g,
-    replacementToken: '[PHONE]',
-    validate: isLikelyPhone,
+    replaceFallbackToken: '[SENSITIVE_CONTACT]',
   },
   {
     id: 'date-of-birth',
@@ -413,6 +406,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
       'gi',
     ),
     replacementToken: '[DATE_OF_BIRTH]',
+    replaceFallbackToken: '[SENSITIVE_DATE]',
     validate: isLikelyDob,
   },
   {
@@ -423,6 +417,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'https://internal.company.com',
     pattern: /\bhttps?:\/\/[^\s/$.?#].[^\s]*\b/gi,
     replacementToken: '[URL]',
+    replaceFallbackToken: '[SENSITIVE_URL]',
   },
   {
     id: 'ipv4',
@@ -460,6 +455,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'DEUTDEFF500',
     pattern: /\b[A-Z]{6}[A-Z0-9]{2}(?:[A-Z0-9]{3})?\b/g,
     replacementToken: '[SWIFT_BIC]',
+    replaceFallbackToken: '[SENSITIVE_CODE]',
   },
   {
     id: 'ifsc',
@@ -478,6 +474,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'name@oksbi',
     pattern: /\b[a-zA-Z0-9._-]{2,}@[a-zA-Z]{2,}[a-zA-Z0-9._-]{1,}\b/g,
     replacementToken: '[UPI_ID]',
+    replaceFallbackToken: '[SENSITIVE_ID]',
   },
   {
     id: 'routing-number',
@@ -487,6 +484,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'routing: 021000021',
     pattern: /\b(?:routing|aba)\s*(?:number|no)?\s*[:=-]?\s*\d{9}\b/gi,
     replacementToken: '[ROUTING_NUMBER]',
+    replaceFallbackToken: '[SENSITIVE_BANKING]',
   },
   {
     id: 'bank-account',
@@ -496,7 +494,19 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'account number: 123456789012',
     pattern: /\b(?:account|acct)(?:\s*(?:number|no))?\s*[:=-]?\s*[A-Z0-9]{8,20}\b/gi,
     replacementToken: '[BANK_ACCOUNT]',
+    replaceFallbackToken: '[SENSITIVE_BANKING]',
     validate: hasAtLeastOneDigit,
+  },
+  {
+    id: 'phone',
+    type: 'phone',
+    label: 'Phone Number',
+    category: 'PII & Finance',
+    example: '+1 555 0199',
+    pattern: /(?<!\w)(?:\+?\d{1,3}[\s.-]?)?(?:\(?\d{1,4}\)?[\s.-]?)?(?:\d[\s.-]?){6,14}\d\b/g,
+    replacementToken: '[PHONE]',
+    replaceFallbackToken: '[SENSITIVE_NUMBER]',
+    validate: isLikelyPhone,
   },
   {
     id: 'credit-card',
@@ -541,7 +551,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     label: 'Password Assignment',
     category: 'Credentials',
     example: 'password=mySecret123',
-    pattern: /\b(?:password|passwd|pwd|passphrase|secret)\s*[:=]\s*[^\s"'`;,]{4,}\b/gi,
+    pattern: /\b(?:password|passwd|pwd|passphrase)\s*[:=]\s*[^\s"'`;,]{4,}\b/gi,
     replacementToken: '[PASSWORD]',
   },
   {
@@ -552,6 +562,7 @@ export const builtInPatterns: BuiltInPatternDefinition[] = [
     example: 'username=admin',
     pattern: /\b(?:username|user|login)\s*[:=]\s*[A-Za-z0-9._@-]{3,}\b/gi,
     replacementToken: '[USERNAME]',
+    replaceFallbackToken: '[SENSITIVE_VALUE]',
   },
 ];
 
