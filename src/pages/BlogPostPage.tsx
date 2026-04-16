@@ -39,9 +39,9 @@ export const BlogPostPage = () => {
               <span>{post.publishedAt}</span>
               <span>{post.readingTime}</span>
             </div>
-            <h1 className="mt-6 max-w-6xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-[4.5rem] lg:leading-[1.04]">
+            <h6 className="mt-6 max-w-6xl text-4xl font-semibold tracking-tight text-white sm:text-2xl lg:text-[2.5rem] lg:leading-[1.04]">
               {post.title}
-            </h1>
+            </h6>
             <p className="mt-6 max-w-5xl text-base leading-8 text-slate-300 sm:text-lg lg:text-[1.3rem] lg:leading-9">
               {post.description}
             </p>

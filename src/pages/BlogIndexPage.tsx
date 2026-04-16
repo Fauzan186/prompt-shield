@@ -24,10 +24,10 @@ export const BlogIndexPage = () => {
             <span className="inline-flex rounded-full border border-orange-400/20 bg-orange-400/10 px-4 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-orange-200">
               PromptShield Blog
             </span>
-            <h1 className="mt-6 max-w-6xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-[4.25rem] lg:leading-[1.05]">
+            <h6 className="mt-6 max-w-6xl text-2xl font-semibold tracking-tight text-white lg:text-[2rem] sm:text-5xl leading-relaxed">
               Prompt privacy guides, product use cases, and safer AI workflow articles.
-            </h1>
-            <p className="mt-6 max-w-5xl text-lg leading-8 text-slate-300 lg:text-[1.35rem] lg:leading-9">
+            </h6>
+            <p className="mt-6 max-w-5xl text-lg leading-8 text-slate-300 lg:text-[1rem] lg:leading-9">
               Learn how teams use PromptShield, why prompt sanitization matters, and how browser-side
               privacy workflows fit into real AI-assisted work across support, engineering, consulting,
               and internal knowledge sharing.
