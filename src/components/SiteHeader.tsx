@@ -22,6 +22,9 @@ export const SiteHeader = ({ showAppCta = true, compact = false }: SiteHeaderPro
             <a href="/#features" className="text-slate-400 transition hover:text-white">
               Features
             </a>
+            <NavLink to="/blog" className={navLinkClass}>
+              Blog
+            </NavLink>
             <a href="/#faq" className="text-slate-400 transition hover:text-white">
               FAQ
             </a>

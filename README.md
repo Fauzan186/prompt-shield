@@ -16,6 +16,7 @@ PromptShield helps detect and sanitize sensitive data before it is shared throug
 ## Live Product
 
 - Website: [https://promptshield.in](https://promptshield.in)
+- Chrome Extension: [https://chromewebstore.google.com/detail/promptshield/ngpdelcnkpikcjajmmlihiacaecomlme?authuser=1&hl=en](https://chromewebstore.google.com/detail/promptshield/ngpdelcnkpikcjajmmlihiacaecomlme?authuser=1&hl=en)
 - Privacy Policy: [https://promptshield.in/privacy](https://promptshield.in/privacy)
 - Contact: [https://promptshield.in/contact](https://promptshield.in/contact)
 
@@ -78,6 +79,12 @@ john@company.com -> [SENSITIVE_CONTACT]
 - Custom rule management in the popup
 - Built-in pattern viewer
 - Local settings and local usage stats
+
+### Install the Chrome Extension
+
+Install PromptShield from the Chrome Web Store:
+
+[https://chromewebstore.google.com/detail/promptshield/ngpdelcnkpikcjajmmlihiacaecomlme?authuser=1&hl=en](https://chromewebstore.google.com/detail/promptshield/ngpdelcnkpikcjajmmlihiacaecomlme?authuser=1&hl=en)
 
 ## Web App Features
 

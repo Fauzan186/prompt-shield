@@ -8,23 +8,14 @@ export const SiteFooter = () => {
         <div className="flex flex-col gap-4 text-sm text-slate-400 lg:flex-row lg:items-center lg:justify-between">
           <Brand className="text-white" compact />
           <div className="flex flex-wrap items-center gap-4 lg:justify-end">
-            <Link to="/" className="transition hover:text-white">
-              Home
+            <Link to="/blog" className="transition hover:text-white">
+              Blog
             </Link>
-            <Link to="/prompt-sanitizer" className="transition hover:text-white">
-              Tool
-            </Link>
-            <a href="/#features" className="transition hover:text-white">
-              Features
-            </a>
             <a href="/#faq" className="transition hover:text-white">
               FAQ
             </a>
             <Link to="/privacy" className="transition hover:text-white">
-              Privacy
-            </Link>
-            <Link to="/terms" className="transition hover:text-white">
-              Terms
+              Privacy &amp; Terms
             </Link>
             <Link to="/contact" className="transition hover:text-white">
               Contact Us

@@ -1,7 +1,9 @@
-import { Link } from 'react-router-dom';
+﻿import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { AnimatedBackground } from '@/components/AnimatedBackground';
 import { SectionCard } from '@/components/SectionCard';
+import { featuredBlogPosts } from '@/content/blogPosts';
+import { CHROME_EXTENSION_URL } from '@/content/site';
 import { BUILT_IN_PATTERN_COUNT } from '@/features/prompt/builtInPatterns';
 import { SiteFooter } from '@/components/SiteFooter';
 import { SiteHeader } from '@/components/SiteHeader';
@@ -10,7 +12,7 @@ import { useDocumentMetadata } from '@/hooks/useDocumentMetadata';
 const appName = import.meta.env.VITE_APP_NAME ?? 'PromptShield';
 const landingTitle = import.meta.env.VITE_APP_TITLE ?? 'PromptShield | AI Prompt Sanitizer';
 const landingDescription =
-  'PromptShield is an AI prompt sanitizer that helps teams remove API keys, tokens, emails, phone numbers, URLs, and credit card numbers before prompts are shared.';
+  'PromptShield is a browser-first prompt privacy tool with a web app and Chrome extension for detecting and sanitizing API keys, tokens, emails, phone numbers, banking values, and other sensitive content before prompts are shared.';
 
 const heroStats = [
   { value: `${BUILT_IN_PATTERN_COUNT}+`, label: 'Sensitive patterns' },
@@ -22,35 +24,35 @@ const featureCards = [
   {
     title: 'Catch hidden prompt leaks',
     description:
-      'Detect API keys, emails, phone numbers, URLs, access tokens, and card-like values before they leave your workspace.',
+      'Detect API keys, emails, phone numbers, URLs, access tokens, and card-like values before they leave your workspace or AI tool.',
   },
   {
     title: 'Choose how data is handled',
     description:
-      'Mask values, replace them with readable labels, or remove them completely based on how strict the share flow needs to be.',
+      'Mask values, remove them entirely, or replace them with readable placeholders based on how strict the share flow needs to be.',
   },
   {
-    title: 'Review before you copy',
+    title: 'Keep prompt review simple',
     description:
-      'See the cleaned prompt and every detected match together, so there is no guesswork before sharing.',
+      'Protect prompt sharing without adding another backend, account system, or complicated review workflow for the team.',
   },
 ];
 
 const workflowItems = [
   {
     step: '01',
-    title: 'Paste',
-    description: 'Drop in a prompt, support note, transcript, or internal AI draft.',
+    title: 'Install or Open',
+    description: 'Install the Chrome extension or open the web app when you want a manual review flow.',
   },
   {
     step: '02',
-    title: 'Sanitize',
-    description: 'Pick mask, replace, or remove and run a browser-side scan.',
+    title: 'Type or Paste',
+    description: 'Bring in prompts, notes, support text, logs, or copied AI drafts that may contain sensitive values.',
   },
   {
     step: '03',
-    title: 'Share',
-    description: 'Copy a safer version for teammates, tickets, docs, or AI tools.',
+    title: 'Sanitize and Share',
+    description: 'Use mask, remove, or replace and then share a cleaner version with more confidence.',
   },
 ];
 
@@ -72,21 +74,6 @@ const useCases = [
   },
 ];
 
-const trustCards = [
-  {
-    title: 'Browser-first privacy',
-    description: 'PromptShield runs locally in the browser and does not send prompt data to a backend.',
-  },
-  {
-    title: 'Fast enough for daily work',
-    description: 'Built for teams that need a practical prompt check before copy, share, or handoff.',
-  },
-  {
-    title: 'Clear and readable output',
-    description: 'Sanitized prompts stay useful for collaboration, debugging, and AI assistance.',
-  },
-];
-
 const faqItems = [
   {
     question: 'What is PromptShield used for?',
@@ -103,27 +90,6 @@ const faqItems = [
     answer:
       'It is useful for support, operations, engineering, product, consulting, and any workflow where prompts may contain sensitive values.',
   },
-];
-
-const testimonials = [
-  {
-    quote: "PromptShield caught a critical API key that would have been exposed in our AI documentation. Saved us from a potential security incident.",
-    author: "Sarah Chen",
-    role: "Engineering Lead",
-    company: "TechCorp"
-  },
-  {
-    quote: "Our support team now uses PromptShield before every AI-assisted customer response. It's become an essential part of our workflow.",
-    author: "Mike Rodriguez",
-    role: "Support Manager",
-    company: "ServicePro"
-  },
-  {
-    quote: "Finally, a tool that makes prompt sanitization painless. The browser-first approach gives us confidence in our data privacy.",
-    author: "Alex Thompson",
-    role: "Product Manager",
-    company: "InnovateLabs"
-  }
 ];
 
 export const LandingPage = () => {
@@ -169,42 +135,31 @@ export const LandingPage = () => {
                 .
               </h1>
               <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-300">
-                {appName} helps teams sanitize prompt content before it gets pasted into AI tools,
-                tickets, docs, or shared examples. Catch sensitive values early and share with more
-                confidence.
+                {appName} helps teams clean sensitive prompt content before it reaches AI tools,
+                docs, tickets, or shared examples. Fast, local, and built for real workflows.
               </p>
 
-              <div className="mt-8 flex flex-col gap-4 sm:flex-row">
-                <Link
-                  to="/prompt-sanitizer"
+              <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-center">
+                <a
+                  href={CHROME_EXTENSION_URL}
+                  target="_blank"
+                  rel="noreferrer"
                   className="group inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-8 py-4 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition-all duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)] hover:scale-105"
                 >
-                  <span>Open Tool</span>
+                  <span>Install Chrome Extension</span>
+                  <svg className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                  </svg>
+                </a>
+                <Link
+                  to="/prompt-sanitizer"
+                  className="group inline-flex items-center justify-center rounded-full border border-white/10 bg-slate-900/60 px-8 py-4 text-sm font-semibold text-slate-100 transition-all duration-200 hover:border-white/20 hover:bg-white/5 hover:text-white hover:scale-105"
+                >
+                  <span>Open Web App</span>
                   <svg className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                   </svg>
                 </Link>
-                <a href="#features" className="group rounded-full">
-                  <span className="inline-flex items-center justify-center rounded-full border border-white/10 bg-slate-900/60 px-8 py-4 text-sm font-semibold text-slate-100 transition-all duration-200 hover:border-white/20 hover:bg-white/5 hover:text-white hover:scale-105">
-                    <span>Explore Features</span>
-                    <svg className="ml-2 h-4 w-4 transition-transform group-hover:translate-y-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-                    </svg>
-                  </span>
-                </a>
-              </div>
-
-              <div className="mt-10 grid gap-4 sm:grid-cols-3">
-                {heroStats.map((stat, index) => (
-                  <div
-                    key={stat.label}
-                    className="animate-fade-in-up rounded-3xl border border-white/10 bg-slate-900/60 p-5 backdrop-blur"
-                    style={{ animationDelay: `${index * 100}ms` }}
-                  >
-                    <div className="text-2xl font-semibold text-white">{stat.value}</div>
-                    <div className="mt-2 text-sm leading-6 text-slate-400">{stat.label}</div>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
@@ -257,6 +212,45 @@ export const LandingPage = () => {
                     <span className="font-semibold">[TOKEN]</span>
                   </p>
                 </div>
+
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                  <div className="text-xs uppercase tracking-[0.22em] text-slate-400">Local First</div>
+                  <p className="mt-3 text-sm leading-7 text-slate-200">
+                    Keep prompt review in the browser without routing sensitive text through
+                    another service.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-8">
+          <div className="rounded-[2rem] border border-white/10 bg-slate-900/50 p-4 backdrop-blur sm:p-5">
+            <div className="grid gap-4 md:grid-cols-[1fr_auto] md:items-center">
+              <div className="grid gap-4 sm:grid-cols-3">
+                {heroStats.map((stat, index) => (
+                  <div
+                    key={stat.label}
+                    className="animate-fade-in-up rounded-3xl border border-white/10 bg-slate-950/50 p-5"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <div className="text-2xl font-semibold text-white">{stat.value}</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-400">{stat.label}</div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="md:pl-4">
+                <a
+                  href="#features"
+                  className="inline-flex items-center text-sm font-semibold text-slate-300 transition hover:text-white"
+                >
+                  Explore Features
+                  <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+                  </svg>
+                </a>
               </div>
             </div>
           </div>
@@ -293,76 +287,13 @@ export const LandingPage = () => {
           </div>
         </section>
 
-        <section className="mt-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-              Why teams trust PromptShield
-            </h2>
-            <p className="mt-4 text-base leading-8 text-slate-400">
-              Built for practical prompt hygiene, not just one-off redaction.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {trustCards.map((card) => (
-              <SectionCard key={card.title} title={card.title} description={card.description}>
-                <div className="text-sm leading-7 text-slate-300">
-                  Designed for real workflows where prompts move quickly and sensitive values should not.
-                </div>
-              </SectionCard>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-20">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-              Trusted by teams worldwide
-            </h2>
-            <p className="mt-4 text-base leading-8 text-slate-400">
-              See how PromptShield helps teams maintain security and productivity.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-6 lg:grid-cols-3">
-            {testimonials.map((testimonial, index) => (
-              <div
-                key={index}
-                className="rounded-3xl border border-white/10 bg-slate-900/60 p-6 backdrop-blur"
-              >
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <svg
-                      key={i}
-                      className="h-4 w-4 text-orange-400"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <blockquote className="mt-4 text-sm leading-7 text-slate-300">
-                  "{testimonial.quote}"
-                </blockquote>
-                <div className="mt-4">
-                  <div className="text-sm font-semibold text-white">{testimonial.author}</div>
-                  <div className="text-xs text-slate-400">
-                    {testimonial.role}, {testimonial.company}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         <section id="features" className="mt-20">
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-              Core product benefits
+              Why PromptShield
             </h2>
             <p className="mt-4 text-base leading-8 text-slate-400">
-              Keep the workflow simple while making prompt sharing safer.
+              A cleaner way to review prompts before they are shared.
             </p>
           </div>
 
@@ -379,8 +310,8 @@ export const LandingPage = () => {
 
         <section className="mt-20 grid gap-6 lg:grid-cols-[0.92fr_1.08fr]">
           <SectionCard
-            title="How It Works"
-            description="A short workflow that fits directly into day-to-day prompt sharing."
+            title="Simple workflow"
+            description="A fast flow that fits directly into daily prompt sharing."
           >
             <div className="space-y-4">
               {workflowItems.map((item) => (
@@ -401,8 +332,8 @@ export const LandingPage = () => {
           </SectionCard>
 
           <SectionCard
-            title="Where PromptShield Fits"
-            description="Useful whenever prompt content crosses team, tool, or client boundaries."
+            title="Built for real workflows"
+            description="Useful when prompt content crosses team, tool, or client boundaries."
           >
             <div className="grid gap-4 md:grid-cols-2">
               {useCases.map((item) => (
@@ -428,7 +359,7 @@ export const LandingPage = () => {
         <section id="faq" className="mt-20 grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
           <SectionCard
             title="Frequently Asked Questions"
-            description="Quick answers for teams comparing prompt privacy tools."
+            description="Quick answers before you try it."
           >
             <div className="space-y-4">
               {faqItems.map((item, index) => (
@@ -465,60 +396,91 @@ export const LandingPage = () => {
           </SectionCard>
 
           <SectionCard
-            title="Ready to try it?"
-            description="Open the app and sanitize a prompt in a few seconds."
+            title="Start with the right flow"
+            description="Use the extension for live browser protection or the web app for manual review."
           >
             <div className="space-y-5">
-              <div className="grid grid-cols-2 gap-3 text-sm text-slate-300">
-                {['API keys', 'Emails', 'Phone numbers', 'URLs', 'Credit cards', 'Tokens'].map(
-                  (item) => (
-                    <div
-                      key={item}
-                      className="rounded-2xl border border-white/10 bg-slate-950/35 px-4 py-3"
-                    >
-                      {item}
-                    </div>
-                  ),
-                )}
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-5">
+                  <div className="text-sm font-semibold text-white">Chrome extension</div>
+                  <p className="mt-2 text-sm leading-7 text-slate-300">
+                    Best when prompts are typed or pasted directly into a supported browser field.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-slate-950/35 p-5">
+                  <div className="text-sm font-semibold text-white">Web app</div>
+                  <p className="mt-2 text-sm leading-7 text-slate-300">
+                    Best when you want a dedicated review space before copying or sharing.
+                  </p>
+                </div>
               </div>
-              <Link
-                to="/prompt-sanitizer"
-                className="inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
-              >
-                Launch PromptShield
-              </Link>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <a
+                  href={CHROME_EXTENSION_URL}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)]"
+                >
+                  Install Chrome Extension
+                </a>
+                <Link
+                  to="/prompt-sanitizer"
+                  className="inline-flex items-center justify-center rounded-full border border-white/10 bg-slate-900/60 px-5 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
+                >
+                  Open Web App
+                </Link>
+              </div>
             </div>
           </SectionCard>
         </section>
-      </div>
 
-      <section className="mt-20 bg-gradient-to-r from-slate-900/50 via-slate-800/30 to-slate-900/50 backdrop-blur">
-        <div className="mx-auto max-w-4xl px-4 py-16 sm:px-6 lg:px-8">
-          <div className="text-center">
+        <section className="mt-20">
+          <div className="mx-auto max-w-3xl text-center">
             <h2 className="text-3xl font-semibold text-white sm:text-4xl">
-              Stay updated on PromptShield
+              Learn more about prompt privacy
             </h2>
-            <p className="mt-4 text-lg text-slate-300">
-              Get notified about new features, security updates, and tips for better prompt hygiene.
+            <p className="mt-4 text-base leading-8 text-slate-400">
+              Useful product guides, extension use cases, and prompt safety content that gives the site more depth and gives users more context.
             </p>
           </div>
 
-          <div className="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-center">
-            <input
-              type="email"
-              placeholder="Enter your email"
-              className="flex-1 rounded-full border border-white/10 bg-slate-950/60 px-6 py-4 text-sm text-white placeholder-slate-400 backdrop-blur focus:border-orange-400/50 focus:outline-none focus:ring-2 focus:ring-orange-400/20 sm:max-w-md"
-            />
-            <button className="inline-flex items-center justify-center rounded-full border border-accent-400/20 bg-[linear-gradient(135deg,rgba(255,107,87,0.96),rgba(244,63,94,0.92))] px-8 py-4 text-sm font-semibold text-white shadow-[0_12px_30px_rgba(255,107,87,0.18)] transition duration-200 hover:brightness-105 hover:shadow-[0_16px_36px_rgba(255,107,87,0.24)] hover:scale-105">
-              Subscribe
-            </button>
+          <div className="mt-10 grid gap-6 lg:grid-cols-3">
+            {featuredBlogPosts.map((post) => (
+              <SectionCard
+                key={post.slug}
+                title={post.title}
+                description={post.excerpt}
+              >
+                <div className="space-y-5">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+                      {post.category}
+                    </div>
+                    <div className="text-xs uppercase tracking-[0.16em] text-slate-500">
+                      {post.publishedAt} · {post.readingTime}
+                    </div>
+                  </div>
+                  <Link
+                    to={`/blog/${post.slug}`}
+                    className="inline-flex items-center text-sm font-semibold text-orange-200 transition hover:text-white"
+                  >
+                    Read article
+                  </Link>
+                </div>
+              </SectionCard>
+            ))}
           </div>
 
-          <p className="mt-4 text-center text-xs text-slate-400">
-            We respect your privacy. Unsubscribe at any time.
-          </p>
-        </div>
-      </section>
+          <div className="mt-8 text-center">
+            <Link
+              to="/blog"
+              className="inline-flex items-center justify-center rounded-full border border-white/10 bg-slate-900/60 px-6 py-3 text-sm font-semibold text-slate-100 transition hover:border-white/20 hover:bg-white/5 hover:text-white"
+            >
+              View all blog posts
+            </Link>
+          </div>
+        </section>
+      </div>
 
       <SiteFooter />
 
@@ -537,3 +499,5 @@ export const LandingPage = () => {
     </main>
   );
 };
+
+
